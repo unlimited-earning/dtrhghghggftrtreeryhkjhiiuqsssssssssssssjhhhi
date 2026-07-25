@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - System Settings & Configuration</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --wa-green: #25D366;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px 12px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 380px; height: 380px; background: rgba(59, 130, 246, 0.1); top: -80px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.08); bottom: -80px; right: -80px; }
+
+    /* Admin Container */
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header Bar */
+    .admin-header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--primary);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       2. FORM & CARD BLOCKS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg { stroke: var(--primary); }
+
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid-2col { grid-template-columns: 1fr 1fr; }
+    }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.725rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .input-box, .select-box, .textarea-box {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-box:focus, .select-box:focus, .textarea-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .textarea-box { height: 75px; resize: none; line-height: 1.4; }
+
+    /* Switch Style */
+    .toggle-row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Action Buttons */
+    .btn-submit-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px var(--primary-glow);
+      transition: var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-backup-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-action-sm {
+      padding: 10px;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       3. MODAL & LOADING OVERLAY
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing System Configuration...</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+      <div class="brand-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Main Admin
+      </div>
+      <span class="brand-badge">System Settings</span>
+    </header>
+
+    <!-- GENERAL WEBSITE SETTINGS -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        General Platform Branding
+      </div>
+
+      <div class="form-grid-2col">
+        <div class="form-group">
+          <label class="form-label">Platform Name</label>
+          <input type="text" id="cfg-site-name" class="input-box" placeholder="EarnPro">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Support WhatsApp Number</label>
+          <input type="text" id="cfg-support-whatsapp" class="input-box" placeholder="+8801700000000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Support Email Address</label>
+          <input type="email" id="cfg-support-email" class="input-box" placeholder="support@earnpro.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Support Telegram Channel Link</label>
+          <input type="url" id="cfg-telegram-link" class="input-box" placeholder="https://t.me/earnpro">
+        </div>
+      </div>
+    </section>
+
+    <!-- FINANCIAL & REWARD REVENUE SETTINGS -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financial & Reward Rules
+      </div>
+
+      <div class="form-grid-2col">
+        <div class="form-group">
+          <label class="form-label">Account Activation Fee (Taka)</label>
+          <input type="number" id="cfg-fee-activation" class="input-box" placeholder="520" step="10">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Referral Reward (Taka)</label>
+          <input type="number" id="cfg-reward-referral" class="input-box" placeholder="170" step="10">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">WhatsApp Admin Reward (Taka)</label>
+          <input type="number" id="cfg-reward-wa" class="input-box" placeholder="100" step="10">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Team Leader Commission (Taka)</label>
+          <input type="number" id="cfg-reward-tl" class="input-box" placeholder="30" step="5">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Class Leader Commission (Taka)</label>
+          <input type="number" id="cfg-reward-cl" class="input-box" placeholder="20" step="5">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Minimum Withdrawal Amount (Taka)</label>
+          <input type="number" id="cfg-min-withdraw" class="input-box" placeholder="100" step="10">
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT METHODS MANAGEMENT -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+        Payment Methods Management
+      </div>
+
+      <div class="form-grid-2col">
+        <!-- bKash -->
+        <div class="toggle-row-item">
+          <div style="flex:1; padding-right:8px;">
+            <div style="font-weight:700;">bKash Personal Number</div>
+            <input type="text" id="cfg-bkash-num" class="input-box" style="margin-top:4px; padding:6px 8px; font-size:11px;" placeholder="01700000000">
+          </div>
+          <label class="switch"><input type="checkbox" id="cfg-bkash-toggle" checked><span class="slider"></span></label>
+        </div>
+
+        <!-- Nagad -->
+        <div class="toggle-row-item">
+          <div style="flex:1; padding-right:8px;">
+            <div style="font-weight:700;">Nagad Personal Number</div>
+            <input type="text" id="cfg-nagad-num" class="input-box" style="margin-top:4px; padding:6px 8px; font-size:11px;" placeholder="01800000000">
+          </div>
+          <label class="switch"><input type="checkbox" id="cfg-nagad-toggle" checked><span class="slider"></span></label>
+        </div>
+
+        <!-- Rocket -->
+        <div class="toggle-row-item">
+          <div style="flex:1; padding-right:8px;">
+            <div style="font-weight:700;">Rocket Personal Number</div>
+            <input type="text" id="cfg-rocket-num" class="input-box" style="margin-top:4px; padding:6px 8px; font-size:11px;" placeholder="01900000000">
+          </div>
+          <label class="switch"><input type="checkbox" id="cfg-rocket-toggle" checked><span class="slider"></span></label>
+        </div>
+
+        <!-- Binance Pay -->
+        <div class="toggle-row-item">
+          <div style="flex:1; padding-right:8px;">
+            <div style="font-weight:700;">Binance Pay ID</div>
+            <input type="text" id="cfg-binance-id" class="input-box" style="margin-top:4px; padding:6px 8px; font-size:11px;" placeholder="123456789">
+          </div>
+          <label class="switch"><input type="checkbox" id="cfg-binance-toggle" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- GOOGLE MEET CLASS LINKS -->
+    <section class="card-block">
+      <div class="section-head" style="margin-bottom:12px; font-weight:700; font-size:0.95rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Google Meet Class Links
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Morning Class Link (10:00 AM)</label>
+        <input type="url" id="cfg-meet-morning" class="input-box" placeholder="https://meet.google.com/abc-defg-hij">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Evening Main Class Link (05:00 PM)</label>
+        <input type="url" id="cfg-meet-evening" class="input-box" placeholder="https://meet.google.com/klm-nopq-rst">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Night Class Link (09:00 PM)</label>
+        <input type="url" id="cfg-meet-night" class="input-box" placeholder="https://meet.google.com/uvw-xyz1-234">
+      </div>
+    </section>
+
+    <!-- SYSTEM MAINTENANCE & TRIBUTES TOGGLES -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        System Master Toggles
+      </div>
+
+      <div class="toggle-row-item">
+        <div>
+          <div style="font-weight:700;">Maintenance Mode</div>
+          <div style="font-size:10px; color:var(--text-muted);">Temporarily close user portal for maintenance</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfg-toggle-maintenance"><span class="slider"></span></label>
+      </div>
+
+      <div class="toggle-row-item">
+        <div>
+          <div style="font-weight:700;">New User Registration</div>
+          <div style="font-size:10px; color:var(--text-muted);">Allow or pause new member registrations</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfg-toggle-registration" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="toggle-row-item">
+        <div>
+          <div style="font-weight:700;">Withdrawal System</div>
+          <div style="font-size:10px; color:var(--text-muted);">Enable or pause user payout requests</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfg-toggle-withdrawal" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="toggle-row-item">
+        <div>
+          <div style="font-weight:700;">Auto Weekly Balance Transfer</div>
+          <div style="font-size:10px; color:var(--text-muted);">Automatically transfer Sub Admin weekly balance every 7 days</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfg-toggle-autotransfer" checked><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <!-- SAVE & BACKUP CONTROLS -->
+    <div class="card-block">
+      <button class="btn-submit-primary" onclick="openConfirmationModal()">
+        Save System Configuration Changes
+      </button>
+
+      <div class="btn-backup-row">
+        <button class="btn-action-sm" onclick="exportSettingsJSON()">Export Config</button>
+        <button class="btn-action-sm" onclick="document.getElementById('import-file-input').click()">Import Config</button>
+        <button class="btn-action-sm" style="color:var(--danger);" onclick="resetDefaultSettings()">Reset Defaults</button>
+      </div>
+      <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importSettingsJSON(event)">
+    </div>
+
+  </div> <!-- /admin-container -->
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="font-size:1rem; font-weight:800; margin-bottom:8px;">Confirm System Update</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:16px;">
+        Are you sure you want to write these system configuration changes directly to the Realtime Database?
+      </p>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-submit-primary" style="flex:1;" onclick="saveSystemSettingsPayload()">Confirm & Save</button>
+        <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:10px; border-radius:var(--radius-md); font-weight:700; flex:1;" onclick="closeModal('confirm-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT REALTIME SETTINGS LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let currentSettingsState = {};
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('settings').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        currentSettingsState = data;
+        populateSettingsForm(data);
+      }
+      hideLoader();
+    }, (error) => {
+      showToast("Error loading settings: " + error.message, "error");
+      hideLoader();
+    });
+
+    // ==========================================================================
+    // 3. POPULATE FORM WITH REALTIME DATA
+    // ==========================================================================
+    function populateSettingsForm(s) {
+      if (s.general) {
+        document.getElementById('cfg-site-name').value = s.general.siteName || '';
+        document.getElementById('cfg-support-whatsapp').value = s.general.supportWhatsapp || '';
+        document.getElementById('cfg-support-email').value = s.general.supportEmail || '';
+        document.getElementById('cfg-telegram-link').value = s.general.telegramLink || '';
+      }
+
+      if (s.financials) {
+        document.getElementById('cfg-fee-activation').value = s.financials.activationFee || 520;
+        document.getElementById('cfg-reward-referral').value = s.financials.referralReward || 170;
+        document.getElementById('cfg-reward-wa').value = s.financials.waAdminReward || 100;
+        document.getElementById('cfg-reward-tl').value = s.financials.teamLeaderReward || 30;
+        document.getElementById('cfg-reward-cl').value = s.financials.classLeaderReward || 20;
+        document.getElementById('cfg-min-withdraw').value = s.financials.minWithdraw || 100;
+      }
+
+      if (s.paymentMethods) {
+        if (s.paymentMethods.bkash) {
+          document.getElementById('cfg-bkash-num').value = s.paymentMethods.bkash.number || '';
+          document.getElementById('cfg-bkash-toggle').checked = s.paymentMethods.bkash.enabled !== false;
+        }
+        if (s.paymentMethods.nagad) {
+          document.getElementById('cfg-nagad-num').value = s.paymentMethods.nagad.number || '';
+          document.getElementById('cfg-nagad-toggle').checked = s.paymentMethods.nagad.enabled !== false;
+        }
+        if (s.paymentMethods.rocket) {
+          document.getElementById('cfg-rocket-num').value = s.paymentMethods.rocket.number || '';
+          document.getElementById('cfg-rocket-toggle').checked = s.paymentMethods.rocket.enabled !== false;
+        }
+        if (s.paymentMethods.binance) {
+          document.getElementById('cfg-binance-id').value = s.paymentMethods.binance.payId || '';
+          document.getElementById('cfg-binance-toggle').checked = s.paymentMethods.binance.enabled !== false;
+        }
+      }
+
+      if (s.googleMeet) {
+        document.getElementById('cfg-meet-morning').value = s.googleMeet.morningLink || '';
+        document.getElementById('cfg-meet-evening').value = s.googleMeet.eveningLink || '';
+        document.getElementById('cfg-meet-night').value = s.googleMeet.nightLink || '';
+      }
+
+      if (s.systemToggles) {
+        document.getElementById('cfg-toggle-maintenance').checked = s.systemToggles.maintenanceMode === true;
+        document.getElementById('cfg-toggle-registration').checked = s.systemToggles.allowRegistration !== false;
+        document.getElementById('cfg-toggle-withdrawal').checked = s.systemToggles.allowWithdrawal !== false;
+        document.getElementById('cfg-toggle-autotransfer').checked = s.systemToggles.autoWeeklyTransfer !== false;
+      }
+    }
+
+    // ==========================================================================
+    // 4. SAVE SYSTEM CONFIGURATION TRANSACTION
+    // ==========================================================================
+    function openConfirmationModal() {
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    async function saveSystemSettingsPayload() {
+      const now = Date.now();
+
+      const settingsPayload = {
+        general: {
+          siteName: document.getElementById('cfg-site-name').value.trim() || 'EarnPro',
+          supportWhatsapp: document.getElementById('cfg-support-whatsapp').value.trim(),
+          supportEmail: document.getElementById('cfg-support-email').value.trim(),
+          telegramLink: document.getElementById('cfg-telegram-link').value.trim()
+        },
+        financials: {
+          activationFee: parseFloat(document.getElementById('cfg-fee-activation').value) || 520,
+          referralReward: parseFloat(document.getElementById('cfg-reward-referral').value) || 170,
+          waAdminReward: parseFloat(document.getElementById('cfg-reward-wa').value) || 100,
+          teamLeaderReward: parseFloat(document.getElementById('cfg-reward-tl').value) || 30,
+          classLeaderReward: parseFloat(document.getElementById('cfg-reward-cl').value) || 20,
+          minWithdraw: parseFloat(document.getElementById('cfg-min-withdraw').value) || 100
+        },
+        paymentMethods: {
+          bkash: {
+            number: document.getElementById('cfg-bkash-num').value.trim(),
+            enabled: document.getElementById('cfg-bkash-toggle').checked
+          },
+          nagad: {
+            number: document.getElementById('cfg-nagad-num').value.trim(),
+            enabled: document.getElementById('cfg-nagad-toggle').checked
+          },
+          rocket: {
+            number: document.getElementById('cfg-rocket-num').value.trim(),
+            enabled: document.getElementById('cfg-rocket-toggle').checked
+          },
+          binance: {
+            payId: document.getElementById('cfg-binance-id').value.trim(),
+            enabled: document.getElementById('cfg-binance-toggle').checked
+          }
+        },
+        googleMeet: {
+          morningLink: document.getElementById('cfg-meet-morning').value.trim(),
+          eveningLink: document.getElementById('cfg-meet-evening').value.trim(),
+          nightLink: document.getElementById('cfg-meet-night').value.trim()
+        },
+        systemToggles: {
+          maintenanceMode: document.getElementById('cfg-toggle-maintenance').checked,
+          allowRegistration: document.getElementById('cfg-toggle-registration').checked,
+          allowWithdrawal: document.getElementById('cfg-toggle-withdrawal').checked,
+          autoWeeklyTransfer: document.getElementById('cfg-toggle-autotransfer').checked
+        },
+        lastUpdated: now,
+        lastUpdatedBy: "Main Admin"
+      };
+
+      try {
+        await database.ref('settings').set(settingsPayload);
+        closeModal('confirm-modal');
+        showToast("System settings updated successfully!", "success");
+      } catch (err) {
+        showToast("Error updating settings: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 5. BACKUP, RESTORE & RESET DEFAULTS
+    // ==========================================================================
+    function exportSettingsJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSettingsState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "EarnPro_Settings_Backup.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importSettingsJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const importedObj = JSON.parse(e.target.result);
+          if (confirm("Overwrite current system configuration with imported file?")) {
+            await database.ref('settings').set(importedObj);
+            showToast("Settings imported successfully!", "success");
+          }
+        } catch (err) {
+          showToast("Invalid JSON backup file.", "error");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetDefaultSettings() {
+      if (confirm("Reset system configuration to default factory values?")) {
+        const defaultSettings = {
+          general: { siteName: "EarnPro", supportWhatsapp: "+8801700000000", supportEmail: "support@earnpro.com", telegramLink: "https://t.me/earnpro" },
+          financials: { activationFee: 520, referralReward: 170, waAdminReward: 100, teamLeaderReward: 30, classLeaderReward: 20, minWithdraw: 100 },
+          systemToggles: { maintenanceMode: false, allowRegistration: true, allowWithdrawal: true, autoWeeklyTransfer: true },
+          lastUpdated: Date.now(),
+          lastUpdatedBy: "Factory Reset"
+        };
+
+        database.ref('settings').set(defaultSettings).then(() => {
+          showToast("Settings reset to defaults!", "success");
+        });
+      }
+    }
+
+    // ==========================================================================
+    // 6. HELPER FUNCTIONS
+    // ==========================================================================
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+  </script>
+</body>
+</html>
