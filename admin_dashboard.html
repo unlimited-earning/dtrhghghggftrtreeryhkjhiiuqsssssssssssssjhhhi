@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - Master Control Dashboard</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 400px; height: 400px; background: rgba(16, 185, 129, 0.1); top: -100px; left: -100px; }
+    .glow-2 { width: 400px; height: 400px; background: rgba(59, 130, 246, 0.08); bottom: -100px; right: -100px; }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3.5px solid rgba(16, 185, 129, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ==========================================================================
+       2. STICKY HEADER & COLLAPSIBLE SIDEBAR
+       ========================================================================== */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      background: rgba(8, 12, 20, 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .menu-toggle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .brand-title-sm {
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .live-clock-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.12);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    /* Sidebar Drawer */
+    .sidebar-drawer {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 270px;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.97);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--card-border);
+      z-index: 9999;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .sidebar-drawer.open { left: 0; }
+
+    .sidebar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .sidebar-menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+
+    .sidebar-link:hover, .sidebar-link.active {
+      background: var(--primary-glow);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar-overlay.active { opacity: 1; pointer-events: all; }
+
+    /* ==========================================================================
+       3. MAIN LAYOUT & CARDS
+       ========================================================================== */
+    .dashboard-body {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+      width: 100%;
+    }
+
+    .section-head {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-head svg { stroke: var(--primary); }
+
+    /* Quick Overview Stats Grid */
+    .stats-4col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .stats-4col { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-card-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      position: relative;
+    }
+
+    .stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .stat-num {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* Pending Action Shortcut Cards */
+    .pending-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .pending-action-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .action-link-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      text-decoration: none;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .action-link-card:hover { transform: translateY(-2px); border-color: var(--accent-gold); }
+
+    .action-title { font-size: 0.8rem; font-weight: 700; }
+    .action-count-badge { font-size: 1.25rem; font-weight: 800; color: var(--accent-gold); }
+
+    /* ==========================================================================
+       4. REVENUE & SYSTEM STATUS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .revenue-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .revenue-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .rev-mini-box {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      padding: 12px;
+      border-radius: var(--radius-md);
+    }
+
+    /* System Status Policy Grid */
+    .status-list-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .status-item {
+      background: rgba(10, 15, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ==========================================================================
+       5. CHARTS & RECENT USERS TABLE
+       ========================================================================== */
+    .chart-container {
+      width: 100%;
+      height: 180px;
+      margin-top: 10px;
+      position: relative;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .recent-user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recent-user-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .user-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .user-avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .badge-status-sm {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .badge-status-sm.active { background: rgba(16, 185, 129, 0.15); color: var(--primary); }
+    .badge-status-sm.pending { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Master Control Panel...</div>
+  </div>
+
+  <!-- SIDEBAR DRAWER OVERLAY -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+
+  <!-- COLLAPSIBLE SIDEBAR MENU -->
+  <aside id="sidebar-drawer" class="sidebar-drawer">
+    <div class="sidebar-head">
+      <span class="brand-title-sm">EarnPro Admin</span>
+      <button style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;" onclick="toggleSidebar(false)">&times;</button>
+    </div>
+
+    <nav class="sidebar-menu-list">
+      <a href="admin_dashboard.html" class="sidebar-link active">Dashboard</a>
+      <a href="admin_user_approval.html" class="sidebar-link">User Approval</a>
+      <a href="admin_sub_admin_approval.html" class="sidebar-link">Sub Admin Approval</a>
+      <a href="admin_notifications.html" class="sidebar-link">Broadcast Center</a>
+      <a href="leaderboard.html" class="sidebar-link">Leaderboard</a>
+      <a href="home.html" class="sidebar-link">User Front-End Home</a>
+      <a href="profile.html" class="sidebar-link">Admin Profile</a>
+    </nav>
+  </aside>
+
+  <!-- STICKY HEADER -->
+  <header class="sticky-header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="brand-title-sm">Master Dashboard</span>
+    </div>
+
+    <span id="live-clock-text" class="live-clock-badge">00:00:00 AM</span>
+  </header>
+
+  <!-- MAIN DASHBOARD BODY -->
+  <main class="dashboard-body">
+
+    <!-- GLOBAL SEARCH BAR -->
+    <div class="card-block" style="padding:10px 14px; margin-bottom:16px;">
+      <input type="text" id="global-search-input" class="search-input" style="width:100%; background:transparent; border:none; color:var(--text-main); font-size:0.85rem; outline:none;" placeholder="Global Search by UID, Name, WhatsApp, Email, Referral..." oninput="handleGlobalSearch()">
+    </div>
+
+    <!-- PENDING ACTIONS SHORTCUT CARDS -->
+    <section>
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pending Action Queue
+      </div>
+
+      <div class="pending-action-grid">
+        <!-- 1. Pending User Approvals -->
+        <a href="admin_user_approval.html" class="action-link-card">
+          <div class="action-title">User Approvals</div>
+          <div id="cnt-pending-users" class="action-count-badge">0</div>
+        </a>
+
+        <!-- 2. Pending Sub Admin Applications -->
+        <a href="admin_sub_admin_approval.html" class="action-link-card" style="border-color:rgba(139,92,246,0.3); background:linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(18,26,43,0.85) 100%);">
+          <div class="action-title">Sub Admin Apps</div>
+          <div id="cnt-pending-subadmin" class="action-count-badge" style="color:var(--accent-purple);">0</div>
+        </a>
+
+        <!-- 3. Pending Withdrawals -->
+        <a href="balance.html" class="action-link-card" style="border-color:rgba(16,185,129,0.3); background:linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(18,26,43,0.85) 100%);">
+          <div class="action-title">Pending Withdraws</div>
+          <div id="cnt-pending-withdraws" class="action-count-badge" style="color:var(--primary);">0</div>
+        </a>
+
+        <!-- 4. Broadcast Center -->
+        <a href="admin_notifications.html" class="action-link-card" style="border-color:rgba(59,130,246,0.3); background:linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(18,26,43,0.85) 100%);">
+          <div class="action-title">Broadcast Center</div>
+          <div class="action-count-badge" style="color:var(--accent-blue);">OPEN</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- QUICK OVERVIEW USER STATS -->
+    <section>
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users & Sub Admin Overview
+      </div>
+
+      <div class="stats-4col">
+        <div class="stat-card-box">
+          <div class="stat-lbl">Total Users</div>
+          <div id="stat-total-users" class="stat-num">0</div>
+        </div>
+
+        <div class="stat-card-box">
+          <div class="stat-lbl">Active Members</div>
+          <div id="stat-active-users" class="stat-num" style="color:var(--primary);">0</div>
+        </div>
+
+        <div class="stat-card-box">
+          <div class="stat-lbl">Pending Users</div>
+          <div id="stat-pending-users-box" class="stat-num" style="color:var(--accent-gold);">0</div>
+        </div>
+
+        <div class="stat-card-box">
+          <div class="stat-lbl">Total Sub Admins</div>
+          <div id="stat-total-subadmins" class="stat-num" style="color:var(--accent-purple);">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EARNING & REVENUE OVERVIEW -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Revenue & Withdrawal Overview
+      </div>
+
+      <div class="revenue-grid">
+        <div class="rev-mini-box">
+          <div class="stat-lbl">Today's Revenue</div>
+          <div id="rev-today" class="stat-num" style="color:var(--primary);">৳ 0</div>
+        </div>
+
+        <div class="rev-mini-box">
+          <div class="stat-lbl">Lifetime Revenue</div>
+          <div id="rev-total" class="stat-num" style="color:var(--primary);">৳ 0</div>
+        </div>
+
+        <div class="rev-mini-box">
+          <div class="stat-lbl">Pending Withdraws</div>
+          <div id="withdraw-pending-sum" class="stat-num" style="color:var(--accent-gold);">৳ 0</div>
+        </div>
+
+        <div class="rev-mini-box">
+          <div class="stat-lbl">Approved Withdraws</div>
+          <div id="withdraw-approved-sum" class="stat-num" style="color:var(--accent-blue);">৳ 0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE PERFORMANCE CHART -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Registration Growth & Analytics
+      </div>
+      <div class="chart-container">
+        <canvas id="growthChart"></canvas>
+      </div>
+    </section>
+
+    <!-- SYSTEM STATUS & POLICY INFO -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        System Status & Platform Rules
+      </div>
+
+      <div class="status-list-grid">
+        <div class="status-item">
+          <span style="color:var(--text-muted);">Activation Fee</span>
+          <strong style="color:var(--primary);">520 Taka</strong>
+        </div>
+        <div class="status-item">
+          <span style="color:var(--text-muted);">Referral Reward</span>
+          <strong style="color:var(--accent-gold);">170 Taka</strong>
+        </div>
+        <div class="status-item">
+          <span style="color:var(--text-muted);">Min. Withdraw</span>
+          <strong>100 Taka</strong>
+        </div>
+        <div class="status-item">
+          <span style="color:var(--text-muted);">Withdraw Interval</span>
+          <strong>Every 3 Days</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECENT USER REGISTRATIONS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+        Recent Registrations
+      </div>
+
+      <div id="recent-users-container" class="recent-user-list">
+        <!-- Dynamic Realtime User Rows -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT REALTIME MASTER ADMIN DASHBOARD LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let allUsersMap = {};
+    let allWithdrawsMap = {};
+    let allSubAdminAppsMap = {};
+
+    // Live Clock Update
+    setInterval(() => {
+      document.getElementById('live-clock-text').textContent = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // Sidebar Controls
+    function toggleSidebar(open) {
+      document.getElementById('sidebar-drawer').classList.toggle('open', open);
+      document.getElementById('sidebar-overlay').classList.toggle('active', open);
+    }
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('users').on('value', (snapshot) => {
+      allUsersMap = snapshot.val() || {};
+      calculateUserStats();
+      renderRecentUsers();
+      drawGrowthChart();
+      hideLoader();
+    });
+
+    database.ref('sub_admin_applications').on('value', (snapshot) => {
+      allSubAdminAppsMap = snapshot.val() || {};
+      calculateSubAdminStats();
+    });
+
+    database.ref('withdraws').on('value', (snapshot) => {
+      allWithdrawsMap = snapshot.val() || {};
+      calculateWithdrawStats();
+    });
+
+    // ==========================================================================
+    // 3. STATISTICAL ENGINE & CALCULATION
+    // ==========================================================================
+    function calculateUserStats() {
+      let total = 0, active = 0, pending = 0, subAdmins = 0;
+      let todayRev = 0, totalRev = 0;
+
+      const todayStr = new Date().toDateString();
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        total++;
+
+        if (u.accountStatus === 'active') {
+          active++;
+          totalRev += 520; // 520 Taka Fee
+
+          if (u.activationDate && new Date(u.activationDate).toDateString() === todayStr) {
+            todayRev += 520;
+          }
+        } else if (u.accountStatus === 'pending') {
+          pending++;
+        }
+
+        if (u.isSubAdmin) subAdmins++;
+      });
+
+      document.getElementById('stat-total-users').textContent = total;
+      document.getElementById('stat-active-users').textContent = active;
+      document.getElementById('stat-pending-users-box').textContent = pending;
+      document.getElementById('cnt-pending-users').textContent = pending;
+      document.getElementById('stat-total-subadmins').textContent = subAdmins;
+
+      document.getElementById('rev-today').textContent = `৳ ${todayRev}`;
+      document.getElementById('rev-total').textContent = `৳ ${totalRev}`;
+    }
+
+    function calculateSubAdminStats() {
+      let pendingApps = 0;
+      Object.keys(allSubAdminAppsMap).forEach(key => {
+        if (allSubAdminAppsMap[key].status === 'Pending') pendingApps++;
+      });
+      document.getElementById('cnt-pending-subadmin').textContent = pendingApps;
+    }
+
+    function calculateWithdrawStats() {
+      let pendingCount = 0;
+      let pendingSum = 0;
+      let approvedSum = 0;
+
+      Object.keys(allWithdrawsMap).forEach(key => {
+        const w = allWithdrawsMap[key];
+        if (w.status === 'Pending') {
+          pendingCount++;
+          pendingSum += (w.amount || 0);
+        } else if (w.status === 'Approved') {
+          approvedSum += (w.amount || 0);
+        }
+      });
+
+      document.getElementById('cnt-pending-withdraws').textContent = pendingCount;
+      document.getElementById('withdraw-pending-sum').textContent = `৳ ${pendingSum.toFixed(2)}`;
+      document.getElementById('withdraw-approved-sum').textContent = `৳ ${approvedSum.toFixed(2)}`;
+    }
+
+    // ==========================================================================
+    // 4. RECENT USERS RENDERING & SEARCH
+    // ==========================================================================
+    function renderRecentUsers() {
+      const container = document.getElementById('recent-users-container');
+      container.innerHTML = '';
+
+      let userArray = Object.keys(allUsersMap).map(key => ({
+        authUid: key,
+        ...allUsersMap[key]
+      }));
+
+      // Sort Newest First
+      userArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      const recentTen = userArray.slice(0, 10);
+
+      if (recentTen.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No users registered yet.</div>`;
+        return;
+      }
+
+      recentTen.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'recent-user-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+
+        div.innerHTML = `
+          <div class="user-left">
+            <img class="user-avatar-sm" src="${avatar}" alt="Avatar">
+            <div style="min-width:0;">
+              <div style="font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHTML(u.name || 'User')}
+              </div>
+              <div style="font-size:0.7rem; color:var(--text-muted);">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
+            </div>
+          </div>
+          <span class="badge-status-sm ${u.accountStatus || 'pending'}">${u.accountStatus || 'pending'}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function handleGlobalSearch() {
+      const term = document.getElementById('global-search-input').value.toLowerCase().trim();
+      const container = document.getElementById('recent-users-container');
+
+      let userArray = Object.keys(allUsersMap).map(key => ({
+        authUid: key,
+        ...allUsersMap[key]
+      }));
+
+      if (term) {
+        userArray = userArray.filter(u => 
+          (u.name && u.name.toLowerCase().includes(term)) ||
+          (u.uid && u.uid.toString().toLowerCase().includes(term)) ||
+          (u.whatsapp && u.whatsapp.toLowerCase().includes(term)) ||
+          (u.email && u.email.toLowerCase().includes(term))
+        );
+      }
+
+      container.innerHTML = '';
+      userArray.slice(0, 10).forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'recent-user-card';
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+        div.innerHTML = `
+          <div class="user-left">
+            <img class="user-avatar-sm" src="${avatar}" alt="Avatar">
+            <div style="min-width:0;">
+              <div style="font-weight:700; color:var(--text-main);">${escapeHTML(u.name || 'User')}</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);">UID: ${u.uid || '------'}</div>
+            </div>
+          </div>
+          <span class="badge-status-sm ${u.accountStatus || 'pending'}">${u.accountStatus || 'pending'}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ==========================================================================
+    // 5. LIGHTWEIGHT CANVAS CHART RENDERING
+    // ==========================================================================
+    function drawGrowthChart() {
+      const canvas = document.getElementById('growthChart');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = 180;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Grid Lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let y = 30; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Smooth Curve Data Points
+      const points = [
+        { x: 20, y: 140 },
+        { x: canvas.width * 0.2, y: 120 },
+        { x: canvas.width * 0.4, y: 80 },
+        { x: canvas.width * 0.6, y: 90 },
+        { x: canvas.width * 0.8, y: 40 },
+        { x: canvas.width - 20, y: 30 }
+      ];
+
+      // Draw Gradient Under Line
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+      grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.lineTo(points[points.length - 1].x, canvas.height);
+      ctx.lineTo(points[0].x, canvas.height);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Draw Stroke Line
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    window.addEventListener('resize', drawGrowthChart);
+
+    // ==========================================================================
+    // 6. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
