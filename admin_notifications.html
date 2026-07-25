@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - Broadcast & Notification Center</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px 12px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 350px; height: 350px; background: rgba(59, 130, 246, 0.1); top: -80px; left: -80px; }
+    .glow-2 { width: 350px; height: 350px; background: rgba(16, 185, 129, 0.08); bottom: -80px; right: -80px; }
+
+    /* Admin Container */
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header Bar */
+    .admin-header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-blue);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       2. TOP SUMMARY & QUICK TARGET AUDIENCE CARDS
+       ========================================================================== */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+    }
+
+    .summary-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* Quick Target Audience Count Row */
+    .quick-target-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .quick-target-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+
+    .target-mini-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 10px 6px;
+      text-align: center;
+    }
+
+    .target-lbl { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .target-count { font-size: 13px; font-weight: 800; color: var(--accent-blue); margin-top: 2px; }
+
+    /* ==========================================================================
+       3. BROADCAST FORM & LIVE PREVIEW
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid-2col { grid-template-columns: 1fr 1fr; }
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .input-box, .select-box, .textarea-box {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .textarea-box { height: 90px; resize: none; line-height: 1.4; }
+
+    .input-box:focus, .select-box:focus, .textarea-box:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .select-box option { background: #0f172a; color: white; }
+
+    /* Live Preview Card */
+    .preview-card-box {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    .prev-tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .prev-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .prev-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .prev-msg {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .btn-submit-blue {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+      transition: var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    /* Custom Selector Multi-Check Box */
+    #custom-user-selector-box {
+      max-height: 130px;
+      overflow-y: auto;
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      padding: 8px;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .user-check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 0.75rem;
+    }
+
+    /* ==========================================================================
+       4. BROADCAST HISTORY TABLE / CARDS
+       ========================================================================== */
+    .history-card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hist-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hist-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .hist-meta {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-icon-sm {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-icon-sm.pinned { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); border-color: var(--accent-gold); }
+
+    /* ==========================================================================
+       5. MODALS & LOADING OVERLAY
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(59, 130, 246, 0.15);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Connecting Broadcast Engine...</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+      <div class="brand-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Main Admin
+      </div>
+      <span class="brand-badge">Notification & Broadcast</span>
+    </header>
+
+    <!-- TOP SUMMARY STATS -->
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Sent</div>
+        <div id="stat-total-sent" class="summary-value" style="color:var(--accent-blue);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Today Broadcasts</div>
+        <div id="stat-today-count" class="summary-value" style="color:var(--primary);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Pinned Announcements</div>
+        <div id="stat-pinned-count" class="summary-value" style="color:var(--accent-gold);">0</div>
+      </div>
+    </section>
+
+    <!-- QUICK AUDIENCE STATS -->
+    <div class="quick-target-grid">
+      <div class="target-mini-card">
+        <div class="target-lbl">All Users</div>
+        <div id="cnt-all" class="target-count">0</div>
+      </div>
+      <div class="target-mini-card">
+        <div class="target-lbl">Active Users</div>
+        <div id="cnt-active" class="target-count" style="color:var(--primary);">0</div>
+      </div>
+      <div class="target-mini-card">
+        <div class="target-lbl">Pending Users</div>
+        <div id="cnt-pending" class="target-count" style="color:var(--accent-gold);">0</div>
+      </div>
+      <div class="target-mini-card">
+        <div class="target-lbl">WA Admins</div>
+        <div id="cnt-wa" class="target-count" style="color:#25D366;">0</div>
+      </div>
+      <div class="target-mini-card">
+        <div class="target-lbl">Team Leaders</div>
+        <div id="cnt-tl" class="target-count" style="color:var(--accent-blue);">0</div>
+      </div>
+      <div class="target-mini-card">
+        <div class="target-lbl">Class Leaders</div>
+        <div id="cnt-cl" class="target-count" style="color:var(--accent-purple);">0</div>
+      </div>
+    </div>
+
+    <!-- SEND NOTIFICATION FORM CARD -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Broadcast Notification
+      </div>
+
+      <div class="form-grid-2col">
+        <!-- Form Inputs Column -->
+        <div>
+          <div class="form-group">
+            <label class="form-label">Notification Title</label>
+            <input type="text" id="notif-title" class="input-box" placeholder="e.g. System Maintenance Notice" oninput="updateLivePreview()">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notification Message</label>
+            <textarea id="notif-message" class="textarea-box" placeholder="Write detailed message..." oninput="updateLivePreview()"></textarea>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div class="form-group">
+              <label class="form-label">Type</label>
+              <select id="notif-type" class="select-box" onchange="updateLivePreview()">
+                <option value="Information">Information</option>
+                <option value="Announcement" selected>Announcement</option>
+                <option value="Success">Success</option>
+                <option value="Warning">Warning</option>
+                <option value="Update">Update</option>
+                <option value="Reward">Reward</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select id="notif-priority" class="select-box" onchange="updateLivePreview()">
+                <option value="Low">Low</option>
+                <option value="Normal" selected>Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Target Audience</label>
+            <select id="notif-audience" class="select-box" onchange="handleAudienceChange()">
+              <option value="all">All Users</option>
+              <option value="active">Only Active Users</option>
+              <option value="pending">Only Pending Users</option>
+              <option value="whatsapp_admin">Only WhatsApp Admins</option>
+              <option value="team_leader">Only Team Leaders</option>
+              <option value="class_leader">Only Class Leaders</option>
+              <option value="custom">Custom Selected Users</option>
+            </select>
+          </div>
+
+          <!-- Custom User Multi-Selector Box -->
+          <div id="custom-user-selector-box">
+            <input type="text" id="custom-user-search" class="input-box" placeholder="Search user..." style="padding:6px; font-size:11px; margin-bottom:6px;" oninput="filterCustomUsers()">
+            <div id="custom-user-checkbox-list"></div>
+          </div>
+        </div>
+
+        <!-- Live Preview & Schedule Column -->
+        <div>
+          <label class="form-label">Live Card Preview</label>
+          <div class="preview-card-box">
+            <div class="prev-tag-row">
+              <span id="prev-type-tag" class="prev-badge" style="background:rgba(59,130,246,0.2); color:var(--accent-blue);">ANNOUNCEMENT</span>
+              <span id="prev-priority-tag" class="prev-badge" style="background:rgba(245,158,11,0.2); color:var(--accent-gold);">NORMAL</span>
+            </div>
+            <div id="prev-title-txt" class="prev-title">Notification Title Preview</div>
+            <div id="prev-msg-txt" class="prev-msg">Your broadcast notification content will appear here in realtime.</div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label class="form-label">Delivery Schedule</label>
+            <select id="schedule-type" class="select-box" onchange="toggleSchedulePickers()">
+              <option value="now" selected>Send Immediately</option>
+              <option value="later">Schedule For Later</option>
+            </select>
+          </div>
+
+          <div id="schedule-picker-row" style="display:none; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+            <input type="date" id="schedule-date" class="input-box">
+            <input type="time" id="schedule-time" class="input-box">
+          </div>
+
+          <button class="btn-submit-blue" onclick="openConfirmModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Dispatch Notification
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATION HISTORY TABLE / CARDS -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Broadcast & Announcement History
+      </div>
+
+      <div id="history-container" class="history-card-stack">
+        <!-- Dynamic Realtime Broadcast History -->
+      </div>
+    </section>
+
+  </div> <!-- /admin-container -->
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="font-size:1rem; font-weight:800; margin-bottom:8px;">Confirm Broadcast</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:16px;">
+        Are you sure you want to dispatch this notification to <strong id="confirm-target-text" style="color:var(--accent-blue);">All Users</strong>?
+      </p>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-submit-blue" style="flex:1;" onclick="dispatchNotification()">Confirm & Send</button>
+        <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:10px; border-radius:var(--radius-md); font-weight:700; flex:1;" onclick="closeModal('confirm-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT REALTIME ADMIN BROADCAST LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let allUsersMap = {};
+    let notificationHistoryList = [];
+    let selectedCustomAuthUids = new Set();
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('users').on('value', (snapshot) => {
+      allUsersMap = snapshot.val() || {};
+      calculateAudienceCounts();
+      renderCustomUserCheckboxes();
+    });
+
+    database.ref('admin_notifications').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      notificationHistoryList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+
+      // Sort Pinned First, then Newest First
+      notificationHistoryList.sort((a, b) => {
+        if (b.pinned !== a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+
+      calculateTopStats();
+      renderHistoryStack();
+      hideLoader();
+    }, (error) => {
+      showToast("Database sync error: " + error.message, "error");
+      hideLoader();
+    });
+
+    // ==========================================================================
+    // 3. AUDIENCE COUNT & TOP STATS
+    // ==========================================================================
+    function calculateAudienceCounts() {
+      let active = 0, pending = 0, wa = 0, tl = 0, cl = 0;
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        if (u.accountStatus === 'active') active++;
+        if (u.accountStatus === 'pending') pending++;
+
+        const role = (u.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+        if (u.isSubAdmin) {
+          if (role === 'whatsapp_admin' || u.subAdminRole === 'WhatsApp Admin') wa++;
+          if (role === 'team_leader' || u.subAdminRole === 'Team Leader') tl++;
+          if (role === 'class_leader' || u.subAdminRole === 'Class Leader') cl++;
+        }
+      });
+
+      const total = Object.keys(allUsersMap).length;
+
+      document.getElementById('cnt-all').textContent = total;
+      document.getElementById('cnt-active').textContent = active;
+      document.getElementById('cnt-pending').textContent = pending;
+      document.getElementById('cnt-wa').textContent = wa;
+      document.getElementById('cnt-tl').textContent = tl;
+      document.getElementById('cnt-cl').textContent = cl;
+    }
+
+    function calculateTopStats() {
+      document.getElementById('stat-total-sent').textContent = notificationHistoryList.length;
+
+      const todayStr = new Date().toDateString();
+      let todayCount = 0;
+      let pinnedCount = 0;
+
+      notificationHistoryList.forEach(n => {
+        if (n.timestamp && new Date(n.timestamp).toDateString() === todayStr) todayCount++;
+        if (n.pinned) pinnedCount++;
+      });
+
+      document.getElementById('stat-today-count').textContent = todayCount;
+      document.getElementById('stat-pinned-count').textContent = pinnedCount;
+    }
+
+    // ==========================================================================
+    // 4. LIVE PREVIEW ENGINE
+    // ==========================================================================
+    function updateLivePreview() {
+      const title = document.getElementById('notif-title').value.trim() || 'Notification Title Preview';
+      const msg = document.getElementById('notif-message').value.trim() || 'Your broadcast notification content will appear here in realtime.';
+      const type = document.getElementById('notif-type').value;
+      const priority = document.getElementById('notif-priority').value;
+
+      document.getElementById('prev-title-txt').textContent = title;
+      document.getElementById('prev-msg-txt').textContent = msg;
+
+      const typeTag = document.getElementById('prev-type-tag');
+      typeTag.textContent = type.toUpperCase();
+
+      const priorityTag = document.getElementById('prev-priority-tag');
+      priorityTag.textContent = priority.toUpperCase();
+    }
+
+    function toggleSchedulePickers() {
+      const scheduleType = document.getElementById('schedule-type').value;
+      const row = document.getElementById('schedule-picker-row');
+      row.style.display = scheduleType === 'later' ? 'grid' : 'none';
+    }
+
+    function handleAudienceChange() {
+      const aud = document.getElementById('notif-audience').value;
+      const selectorBox = document.getElementById('custom-user-selector-box');
+      selectorBox.style.display = aud === 'custom' ? 'block' : 'none';
+    }
+
+    function renderCustomUserCheckboxes() {
+      const container = document.getElementById('custom-user-checkbox-list');
+      container.innerHTML = '';
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        const div = document.createElement('div');
+        div.className = 'user-check-item';
+        div.innerHTML = `
+          <input type="checkbox" value="${key}" onchange="toggleCustomUserSelection('${key}', this.checked)">
+          <span>${escapeHTML(u.name || 'User')} (UID: ${u.uid || 'N/A'})</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleCustomUserSelection(authUid, isChecked) {
+      if (isChecked) selectedCustomAuthUids.add(authUid);
+      else selectedCustomAuthUids.delete(authUid);
+    }
+
+    function filterCustomUsers() {
+      const term = document.getElementById('custom-user-search').value.toLowerCase().trim();
+      const items = document.querySelectorAll('.user-check-item');
+
+      items.forEach(item => {
+        const txt = item.textContent.toLowerCase();
+        item.style.display = txt.includes(term) ? 'flex' : 'none';
+      });
+    }
+
+    // ==========================================================================
+    // 5. BROADCAST DISPATCH TRANSACTION
+    // ==========================================================================
+    function openConfirmModal() {
+      const title = document.getElementById('notif-title').value.trim();
+      const msg = document.getElementById('notif-message').value.trim();
+
+      if (!title || !msg) {
+        showToast("Title and message cannot be empty.", "error");
+        return;
+      }
+
+      const aud = document.getElementById('notif-audience').value;
+      document.getElementById('confirm-target-text').textContent = aud.toUpperCase().replace('_', ' ');
+
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    async function dispatchNotification() {
+      const title = document.getElementById('notif-title').value.trim();
+      const message = document.getElementById('notif-message').value.trim();
+      const type = document.getElementById('notif-type').value;
+      const priority = document.getElementById('notif-priority').value;
+      const targetAudience = document.getElementById('notif-audience').value;
+      const scheduleType = document.getElementById('schedule-type').value;
+
+      let dispatchTime = Date.now();
+      if (scheduleType === 'later') {
+        const dateVal = document.getElementById('schedule-date').value;
+        const timeVal = document.getElementById('schedule-time').value;
+        if (!dateVal || !timeVal) {
+          showToast("Please choose valid date and time for schedule.", "error");
+          closeModal('confirm-modal');
+          return;
+        }
+        dispatchTime = new Date(`${dateVal}T${timeVal}`).getTime();
+      }
+
+      const notifId = database.ref('admin_notifications').push().key;
+      const payload = {
+        id: notifId,
+        title: title,
+        message: message,
+        type: type,
+        priority: priority,
+        targetAudience: targetAudience,
+        status: scheduleType === 'later' ? 'Scheduled' : 'Delivered',
+        timestamp: dispatchTime,
+        pinned: false,
+        sender: "Main Admin"
+      };
+
+      const updates = {};
+      updates[`admin_notifications/${notifId}`] = payload;
+
+      // If Announcement -> save to global notices feed
+      if (type === 'Announcement') {
+        const noticeId = database.ref('notices').push().key;
+        updates[`notices/${noticeId}`] = {
+          title: title,
+          message: message,
+          badge: priority.toUpperCase(),
+          timestamp: dispatchTime
+        };
+      }
+
+      // User Delivery: Write to selected users' notification subnode
+      let targetUids = [];
+      if (targetAudience === 'custom') {
+        targetUids = Array.from(selectedCustomAuthUids);
+      } else {
+        Object.keys(allUsersMap).forEach(key => {
+          const u = allUsersMap[key];
+          const role = (u.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+
+          if (targetAudience === 'all') targetUids.push(key);
+          else if (targetAudience === 'active' && u.accountStatus === 'active') targetUids.push(key);
+          else if (targetAudience === 'pending' && u.accountStatus === 'pending') targetUids.push(key);
+          else if (targetAudience === 'whatsapp_admin' && (role === 'whatsapp_admin' || u.subAdminRole === 'WhatsApp Admin')) targetUids.push(key);
+          else if (targetAudience === 'team_leader' && (role === 'team_leader' || u.subAdminRole === 'Team Leader')) targetUids.push(key);
+          else if (targetAudience === 'class_leader' && (role === 'class_leader' || u.subAdminRole === 'Class Leader')) targetUids.push(key);
+        });
+      }
+
+      targetUids.forEach(uid => {
+        const userNotifKey = database.ref(`notifications/${uid}`).push().key;
+        updates[`notifications/${uid}/${userNotifKey}`] = {
+          title: title,
+          message: message,
+          type: type,
+          priority: priority,
+          timestamp: dispatchTime
+        };
+      });
+
+      try {
+        await database.ref().update(updates);
+        closeModal('confirm-modal');
+        document.getElementById('notif-title').value = '';
+        document.getElementById('notif-message').value = '';
+        updateLivePreview();
+        showToast(`Notification broadcasted to ${targetUids.length} user(s)!`, "success");
+      } catch (err) {
+        showToast("Error sending notification: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. ANNOUNCEMENT MANAGEMENT (PIN / UNPIN / DELETE)
+    // ==========================================================================
+    async function togglePinNotification(notifId, currentPinState) {
+      try {
+        await database.ref(`admin_notifications/${notifId}/pinned`).set(!currentPinState);
+        showToast(`Announcement ${!currentPinState ? 'Pinned' : 'Unpinned'}.`, "success");
+      } catch (err) {
+        showToast("Error updating pin: " + err.message, "error");
+      }
+    }
+
+    async function deleteNotification(notifId) {
+      if (confirm("Are you sure you want to delete this notification record?")) {
+        try {
+          await database.ref(`admin_notifications/${notifId}`).remove();
+          showToast("Notification deleted.", "success");
+        } catch (err) {
+          showToast("Error deleting record: " + err.message, "error");
+        }
+      }
+    }
+
+    function renderHistoryStack() {
+      const container = document.getElementById('history-container');
+      container.innerHTML = '';
+
+      if (notificationHistoryList.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No broadcast history found.</div>`;
+        return;
+      }
+
+      notificationHistoryList.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'history-item-card';
+
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent';
+
+        card.innerHTML = `
+          <div class="hist-top-row">
+            <div class="hist-title">
+              ${item.pinned ? '📌 ' : ''}${escapeHTML(item.title || 'Notification')}
+            </div>
+            <span style="font-size:9px; font-weight:800; color:var(--primary); background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px;">
+              ${(item.status || 'Delivered').toUpperCase()}
+            </span>
+          </div>
+
+          <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.3;">
+            ${escapeHTML(item.message || '')}
+          </div>
+
+          <div class="hist-top-row" style="margin-top:4px; border-top:1px solid rgba(255,255,255,0.03); padding-top:6px;">
+            <div class="hist-meta">
+              <span>Audience: <strong>${item.targetAudience}</strong></span>
+              <span>${dateStr}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-icon-sm ${item.pinned ? 'pinned' : ''}" onclick="togglePinNotification('${item.id}', ${item.pinned})">
+                ${item.pinned ? 'Unpin' : 'Pin'}
+              </button>
+              <button class="btn-icon-sm" style="color:var(--danger);" onclick="deleteNotification('${item.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==========================================================================
+    // 7. HELPER FUNCTIONS
+    // ==========================================================================
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
