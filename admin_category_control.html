@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - Sub Admin Category Control Panel</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --wa-green: #25D366;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px 12px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 380px; height: 380px; background: rgba(139, 92, 246, 0.1); top: -80px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.08); bottom: -80px; right: -80px; }
+
+    /* Layout Container */
+    .admin-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header Bar */
+    .admin-header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: var(--accent-purple);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       2. THREE CATEGORY CARDS & TOGGLES
+       ========================================================================== */
+    .category-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .category-cards-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .category-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .category-card.active-on {
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .category-card.inactive-off {
+      border-color: rgba(239, 68, 68, 0.25);
+      opacity: 0.85;
+    }
+
+    .cat-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cat-name-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .status-badge-lg {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .status-badge-lg.on { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge-lg.off { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .cat-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .cat-stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: rgba(10, 15, 26, 0.5);
+      padding: 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-sub-lbl { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .stat-sub-val { font-size: 1rem; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+    /* Switch Style */
+    .toggle-row-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    input:disabled + .slider { opacity: 0.4; cursor: not-allowed; }
+
+    /* ==========================================================================
+       3. SYSTEM POLICY & LAST UPDATE CARD
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.8rem;
+    }
+
+    .detail-lbl { color: var(--text-muted); font-weight: 600; }
+    .detail-val { font-weight: 700; color: var(--text-main); text-align: right; }
+
+    /* ==========================================================================
+       4. ACTIVITY LOGS TABLE & SEARCH
+       ========================================================================== */
+    .toolbar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .table-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .table-responsive { width: 100%; overflow-x: auto; }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .admin-table th {
+      background: rgba(30, 41, 59, 0.6);
+      padding: 14px 16px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+
+    .admin-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* ==========================================================================
+       5. CONFIRMATION MODAL & LOADING OVERLAY
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .btn-submit-purple {
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, var(--accent-purple) 0%, #7c3aed 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3.5px solid rgba(139, 92, 246, 0.15);
+      border-top-color: var(--accent-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing Category Availability...</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+      <div class="brand-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Main Admin
+      </div>
+      <span class="brand-badge">Category Control</span>
+    </header>
+
+    <!-- THREE CATEGORY CONTROL CARDS -->
+    <section class="category-cards-grid">
+      <!-- 1. WhatsApp Admin -->
+      <div id="card-wa-admin" class="category-card active-on">
+        <div>
+          <div class="cat-head-row">
+            <span class="cat-name-title" style="color:var(--wa-green);">WhatsApp Admin</span>
+            <span id="badge-wa-admin" class="status-badge-lg on">ACTIVE (ON)</span>
+          </div>
+          <p class="cat-desc" style="margin-top:8px;">Manages direct user activations & payment confirmations.</p>
+        </div>
+
+        <div class="cat-stats-row">
+          <div>
+            <div class="stat-sub-lbl">Active Admins</div>
+            <div id="stat-wa-active-count" class="stat-sub-val" style="color:var(--wa-green);">0</div>
+          </div>
+          <div>
+            <div class="stat-sub-lbl">Pending Apps</div>
+            <div id="stat-wa-pending-count" class="stat-sub-val" style="color:var(--accent-gold);">0</div>
+          </div>
+        </div>
+
+        <div class="toggle-row-bottom">
+          <span style="font-weight:700; font-size:0.8rem; color:var(--text-muted);">Application Access</span>
+          <label class="switch">
+            <input type="checkbox" id="switch-wa-admin" checked onchange="handleToggleRequest('WhatsApp Admin', this)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. Team Leader -->
+      <div id="card-team-leader" class="category-card active-on">
+        <div>
+          <div class="cat-head-row">
+            <span class="cat-name-title" style="color:var(--accent-blue);">Team Leader</span>
+            <span id="badge-team-leader" class="status-badge-lg on">ACTIVE (ON)</span>
+          </div>
+          <p class="cat-desc" style="margin-top:8px;">Supervises sub-admin teams (Up to 10 WhatsApp Admins).</p>
+        </div>
+
+        <div class="cat-stats-row">
+          <div>
+            <div class="stat-sub-lbl">Active Leaders</div>
+            <div id="stat-tl-active-count" class="stat-sub-val" style="color:var(--accent-blue);">0</div>
+          </div>
+          <div>
+            <div class="stat-sub-lbl">Pending Apps</div>
+            <div id="stat-tl-pending-count" class="stat-sub-val" style="color:var(--accent-gold);">0</div>
+          </div>
+        </div>
+
+        <div class="toggle-row-bottom">
+          <span style="font-weight:700; font-size:0.8rem; color:var(--text-muted);">Application Access</span>
+          <label class="switch">
+            <input type="checkbox" id="switch-team-leader" checked onchange="handleToggleRequest('Team Leader', this)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. Class Leader -->
+      <div id="card-class-leader" class="category-card active-on">
+        <div>
+          <div class="cat-head-row">
+            <span class="cat-name-title" style="color:var(--accent-purple);">Class Leader</span>
+            <span id="badge-class-leader" class="status-badge-lg on">ACTIVE (ON)</span>
+          </div>
+          <p class="cat-desc" style="margin-top:8px;">Conducts 5:00 PM training classes & guides Team Leaders.</p>
+        </div>
+
+        <div class="cat-stats-row">
+          <div>
+            <div class="stat-sub-lbl">Active Leaders</div>
+            <div id="stat-cl-active-count" class="stat-sub-val" style="color:var(--accent-purple);">0</div>
+          </div>
+          <div>
+            <div class="stat-sub-lbl">Pending Apps</div>
+            <div id="stat-cl-pending-count" class="stat-sub-val" style="color:var(--accent-gold);">0</div>
+          </div>
+        </div>
+
+        <div class="toggle-row-bottom">
+          <span style="font-weight:700; font-size:0.8rem; color:var(--text-muted);">Application Access</span>
+          <label class="switch">
+            <input type="checkbox" id="switch-class-leader" checked onchange="handleToggleRequest('Class Leader', this)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- SYSTEM POLICY & LAST UPDATED DETAILS -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        System Category Rules & Status Summary
+      </div>
+
+      <div class="detail-row"><span class="detail-lbl">Minimum Active Categories Rule:</span><span class="detail-val" style="color:var(--primary);">At least 1 category MUST remain ON</span></div>
+      <div class="detail-row"><span class="detail-lbl">Last Category State Change:</span><span id="meta-last-updated" class="detail-val">Recent</span></div>
+      <div class="detail-row"><span class="detail-lbl">Last Updated By:</span><span id="meta-last-updated-by" class="detail-val">Main Admin</span></div>
+    </section>
+
+    <!-- ACTIVITY LOGS TABLE & SEARCH -->
+    <section class="card-block" style="padding:0; background:transparent; border:none;">
+      <div class="toolbar-card">
+        <div class="section-title" style="margin-bottom:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Category Control Activity Logs
+        </div>
+        <input type="text" id="log-search-input" class="search-input" placeholder="Search logs by Category, Action (ON/OFF), Date..." oninput="filterAndRenderLogs()">
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Action</th>
+                <th>Date & Time</th>
+                <th>Admin</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body">
+              <!-- Dynamic Realtime Logs -->
+            </tbody>
+          </table>
+          <div id="empty-logs-msg" style="text-align:center; padding:24px; color:var(--text-muted); display:none;">
+            No category state change logs found.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /admin-container -->
+
+  <!-- CONFIRMATION POPUP MODAL -->
+  <div id="confirm-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="font-size:1rem; font-weight:800; margin-bottom:8px;">Confirm Category Status Change</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+        Are you sure you want to change the status of <strong id="modal-cat-title" style="color:var(--accent-purple);">Category</strong>?
+      </p>
+
+      <div class="detail-row"><span class="detail-lbl">Current Status:</span><span id="modal-curr-status" class="detail-val">ON</span></div>
+      <div class="detail-row" style="margin-bottom:16px;"><span class="detail-lbl">New Status:</span><span id="modal-new-status" class="detail-val" style="color:var(--primary);">OFF</span></div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn-submit-purple" style="flex:1;" onclick="confirmToggleCategoryExecute()">Confirm & Update</button>
+        <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:10px; border-radius:var(--radius-md); font-weight:700; flex:1;" onclick="cancelToggleModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT REALTIME CATEGORY CONTROL LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Category State Memory
+    const categoryStates = {
+      'WhatsApp Admin': true,
+      'Team Leader': true,
+      'Class Leader': true
+    };
+
+    let pendingToggleCategory = null;
+    let pendingToggleNewValue = false;
+    let activityLogsList = [];
+    let allUsersMap = {};
+    let allApplicationsMap = {};
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('settings/subAdminCategories').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (typeof data['WhatsApp Admin'] === 'boolean') categoryStates['WhatsApp Admin'] = data['WhatsApp Admin'];
+        if (typeof data['Team Leader'] === 'boolean') categoryStates['Team Leader'] = data['Team Leader'];
+        if (typeof data['Class Leader'] === 'boolean') categoryStates['Class Leader'] = data['Class Leader'];
+
+        if (data.lastUpdated) {
+          document.getElementById('meta-last-updated').textContent = new Date(data.lastUpdated).toLocaleString();
+        }
+        if (data.lastUpdatedBy) {
+          document.getElementById('meta-last-updated-by').textContent = data.lastUpdatedBy;
+        }
+      }
+      updateCategoryCardsUI();
+      hideLoader();
+    }, (error) => {
+      showToast("Error syncing categories: " + error.message, "error");
+      hideLoader();
+    });
+
+    database.ref('users').on('value', (snapshot) => {
+      allUsersMap = snapshot.val() || {};
+      calculateCategoryMemberCounts();
+    });
+
+    database.ref('all_sub_admin_applications').on('value', (snapshot) => {
+      allApplicationsMap = snapshot.val() || {};
+      calculateCategoryMemberCounts();
+    });
+
+    database.ref('category_activity_logs').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      activityLogsList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+
+      // Sort Newest First
+      activityLogsList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      filterAndRenderLogs();
+    });
+
+    // ==========================================================================
+    // 3. STATISTICAL COUNT CALCULATIONS
+    // ==========================================================================
+    function calculateCategoryMemberCounts() {
+      let waActive = 0, tlActive = 0, clActive = 0;
+      let waPending = 0, tlPending = 0, clPending = 0;
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        if (u.isSubAdmin) {
+          const role = (u.subAdminRole || '').toLowerCase().replace(/\s+/g, '_');
+          if (role === 'whatsapp_admin' || u.subAdminRole === 'WhatsApp Admin') waActive++;
+          if (role === 'team_leader' || u.subAdminRole === 'Team Leader') tlActive++;
+          if (role === 'class_leader' || u.subAdminRole === 'Class Leader') clActive++;
+        }
+      });
+
+      Object.keys(allApplicationsMap).forEach(appId => {
+        const app = allApplicationsMap[appId];
+        if (app.status === 'Pending') {
+          if (app.category === 'WhatsApp Admin') waPending++;
+          if (app.category === 'Team Leader') tlPending++;
+          if (app.category === 'Class Leader') clPending++;
+        }
+      });
+
+      document.getElementById('stat-wa-active-count').textContent = waActive;
+      document.getElementById('stat-tl-active-count').textContent = tlActive;
+      document.getElementById('stat-cl-active-count').textContent = clActive;
+
+      document.getElementById('stat-wa-pending-count').textContent = waPending;
+      document.getElementById('stat-tl-pending-count').textContent = tlPending;
+      document.getElementById('stat-cl-pending-count').textContent = clPending;
+    }
+
+    // ==========================================================================
+    // 4. UI CARD RENDERING & STRICT ONE-ON RULE ENFORCEMENT
+    // ==========================================================================
+    function updateCategoryCardsUI() {
+      const activeCount = Object.values(categoryStates).filter(Boolean).length;
+
+      bindCategoryCardUI('WhatsApp Admin', 'card-wa-admin', 'badge-wa-admin', 'switch-wa-admin', activeCount);
+      bindCategoryCardUI('Team Leader', 'card-team-leader', 'badge-team-leader', 'switch-team-leader', activeCount);
+      bindCategoryCardUI('Class Leader', 'card-class-leader', 'badge-class-leader', 'switch-class-leader', activeCount);
+    }
+
+    function bindCategoryCardUI(categoryName, cardId, badgeId, switchId, totalActiveCount) {
+      const isON = categoryStates[categoryName] !== false;
+      const card = document.getElementById(cardId);
+      const badge = document.getElementById(badgeId);
+      const switchEl = document.getElementById(switchId);
+
+      switchEl.checked = isON;
+
+      if (isON) {
+        card.className = "category-card active-on";
+        badge.textContent = "ACTIVE (ON)";
+        badge.className = "status-badge-lg on";
+
+        // Strict Rule: If only 1 category is ON, disable turning it OFF!
+        if (totalActiveCount <= 1) {
+          switchEl.disabled = true;
+          switchEl.title = "At least one category must remain active.";
+        } else {
+          switchEl.disabled = false;
+          switchEl.title = "";
+        }
+      } else {
+        card.className = "category-card inactive-off";
+        badge.textContent = "DISABLED (OFF)";
+        badge.className = "status-badge-lg off";
+        switchEl.disabled = false;
+        switchEl.title = "";
+      }
+    }
+
+    // ==========================================================================
+    // 5. TOGGLE HANDLER & CONFIRMATION POPUP
+    // ==========================================================================
+    function handleToggleRequest(categoryName, switchEl) {
+      const targetState = switchEl.checked;
+
+      // Prevent turning OFF if it's the last remaining ON category
+      if (!targetState) {
+        const currentActiveCount = Object.values(categoryStates).filter(Boolean).length;
+        if (currentActiveCount <= 1) {
+          switchEl.checked = true; // Reset UI switch
+          showToast("At least one Sub Admin category must remain active.", "warning");
+          return;
+        }
+      }
+
+      pendingToggleCategory = categoryName;
+      pendingToggleNewValue = targetState;
+
+      document.getElementById('modal-cat-title').textContent = categoryName;
+      document.getElementById('modal-curr-status').textContent = targetState ? "OFF" : "ON";
+      document.getElementById('modal-new-status').textContent = targetState ? "ON" : "OFF";
+      document.getElementById('modal-new-status').style.color = targetState ? "var(--primary)" : "var(--danger)";
+
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    function cancelToggleModal() {
+      // Revert UI switch state
+      if (pendingToggleCategory) {
+        const switchId = pendingToggleCategory === 'WhatsApp Admin' ? 'switch-wa-admin' : (pendingToggleCategory === 'Team Leader' ? 'switch-team-leader' : 'switch-class-leader');
+        document.getElementById(switchId).checked = categoryStates[pendingToggleCategory] !== false;
+      }
+
+      closeModal('confirm-modal');
+      pendingToggleCategory = null;
+    }
+
+    async function confirmToggleCategoryExecute() {
+      if (!pendingToggleCategory) return;
+
+      const category = pendingToggleCategory;
+      const newState = pendingToggleNewValue;
+      const now = Date.now();
+
+      categoryStates[category] = newState;
+
+      const updates = {};
+      updates[`settings/subAdminCategories/${category}`] = newState;
+      updates[`settings/subAdminCategories/lastUpdated`] = now;
+      updates[`settings/subAdminCategories/lastUpdatedBy`] = "Main Admin";
+
+      // 1. Log Activity
+      const logId = database.ref('category_activity_logs').push().key;
+      updates[`category_activity_logs/${logId}`] = {
+        category: category,
+        action: newState ? "ON" : "OFF",
+        timestamp: now,
+        admin: "Main Admin"
+      };
+
+      // 2. Dispatch Global Announcement Notice to Users
+      const noticeId = database.ref('notices').push().key;
+      const noticeMessage = newState 
+        ? `${category} applications are now open! Eligible members with 3+ active referrals can apply.`
+        : `${category} applications are temporarily closed by Main Admin.`;
+
+      updates[`notices/${noticeId}`] = {
+        title: `${category} Status Update`,
+        message: noticeMessage,
+        badge: newState ? "SYSTEM UPDATE" : "NOTICE",
+        timestamp: now
+      };
+
+      try {
+        await database.ref().update(updates);
+        closeModal('confirm-modal');
+        showToast(`Category '${category}' updated to ${newState ? 'ON' : 'OFF'}!`, "success");
+        pendingToggleCategory = null;
+      } catch (err) {
+        showToast("Error updating category: " + err.message, "error");
+        cancelToggleModal();
+      }
+    }
+
+    // ==========================================================================
+    // 6. ACTIVITY LOG RENDERING & SEARCH
+    // ==========================================================================
+    function filterAndRenderLogs() {
+      const term = document.getElementById('log-search-input').value.toLowerCase().trim();
+      const tbody = document.getElementById('logs-table-body');
+      const emptyMsg = document.getElementById('empty-logs-msg');
+      tbody.innerHTML = '';
+
+      let filtered = activityLogsList;
+
+      if (term) {
+        filtered = activityLogsList.filter(l => 
+          (l.category && l.category.toLowerCase().includes(term)) ||
+          (l.action && l.action.toLowerCase().includes(term)) ||
+          (l.admin && l.admin.toLowerCase().includes(term))
+        );
+      }
+
+      if (filtered.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      }
+      emptyMsg.style.display = 'none';
+
+      filtered.forEach(l => {
+        const tr = document.createElement('tr');
+        const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+        const isON = l.action === 'ON';
+
+        tr.innerHTML = `
+          <td style="font-weight:700;">${escapeHTML(l.category || 'Category')}</td>
+          <td>
+            <span style="font-size:10px; font-weight:800; padding:2px 8px; border-radius:4px; text-transform:uppercase; background:${isON ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${isON ? 'var(--primary)' : 'var(--danger)'}; border:1px solid ${isON ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}">
+              ${l.action}
+            </span>
+          </td>
+          <td style="font-size:0.75rem; color:var(--text-muted);">${dateStr}</td>
+          <td><span style="color:var(--accent-purple); font-weight:700;">${escapeHTML(l.admin || 'Admin')}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================================================
+    // 7. HELPER FUNCTIONS
+    // ==========================================================================
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
