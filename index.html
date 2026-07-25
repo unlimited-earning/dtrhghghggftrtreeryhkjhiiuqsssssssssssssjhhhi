@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0f172a; /* ডার্ক ব্যাকগ্রাউন্ড */
+            color: #ffffff;
+        }
+
+        .loader-container {
+            text-align: center;
+        }
+
+        /* অ্যানিমেটেড স্পিনার ডিজাইন */
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.1);
+            border-top: 6px solid #38bdf8; /* উজ্জ্বল নীল কালার */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f8fafc;
+        }
+
+        p {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader-container">
+        <div class="spinner"></div>
+        <h2>Admin Dashboard Loading...</h2>
+        <p>অনুগ্রহ করে কিছুটা সময় অপেক্ষা করুন</p>
+    </div>
+
+    <script>
+        // ৩ সেকেন্ড (৩০০০ মিলি-সেকেন্ড) পর admin_dashboard.html এ রিডাইরেক্ট হবে
+        setTimeout(function() {
+            window.location.href = "admin_dashboard.html";
+        }, 3000); // সময় বাড়াতে বা কমাতে ৩০০০ মানটি পরিবর্তন করতে পারেন
+    </script>
+
+</body>
+</html>
