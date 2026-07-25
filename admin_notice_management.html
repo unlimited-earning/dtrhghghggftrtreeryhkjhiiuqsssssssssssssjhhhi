@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - Notice & Content Management</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px 12px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 380px; height: 380px; background: rgba(59, 130, 246, 0.1); top: -80px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: rgba(139, 92, 246, 0.08); bottom: -80px; right: -80px; }
+
+    /* Admin Container */
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header Bar */
+    .admin-header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-blue);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       2. TOP SUMMARY & SECTION TABS
+       ========================================================================== */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .summary-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+    }
+
+    .summary-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* Section Tab Switcher */
+    .tab-switcher {
+      display: flex;
+      background: rgba(10, 15, 26, 0.7);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.85rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    /* ==========================================================================
+       3. FORM & PREVIEW CARDS
+       ========================================================================== */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .form-grid-2col { grid-template-columns: 1fr 1fr; }
+    }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.725rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .input-box, .select-box, .textarea-box {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.825rem;
+      outline: none;
+    }
+
+    .textarea-box { height: 90px; resize: none; line-height: 1.4; }
+
+    .btn-submit-blue {
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* Switch Style for Pin Option */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 22px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider { background-color: var(--accent-gold); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    /* Live Preview Box */
+    .preview-card-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-top: 8px;
+    }
+
+    .prev-tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .prev-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       4. LIST STACK CARDS
+       ========================================================================== */
+    .list-card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item-card.pinned {
+      border-color: var(--accent-gold);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(10, 15, 26, 0.6) 100%);
+    }
+
+    .item-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-icon-sm {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-icon-sm.pinned { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); border-color: var(--accent-gold); }
+
+    /* ==========================================================================
+       5. MODAL & LOADING OVERLAY
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3.5px solid rgba(59, 130, 246, 0.15);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing Notices & Content...</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+      <div class="brand-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Main Admin
+      </div>
+      <span class="brand-badge">Notice & Learning Center</span>
+    </header>
+
+    <!-- TOP SUMMARY STATS -->
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Notices</div>
+        <div id="stat-total-notices" class="summary-value" style="color:var(--accent-blue);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Pinned Notices</div>
+        <div id="stat-pinned-notices" class="summary-value" style="color:var(--accent-gold);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Learning Articles</div>
+        <div id="stat-total-posts" class="summary-value" style="color:var(--accent-purple);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Active Published</div>
+        <div id="stat-published-count" class="summary-value" style="color:var(--primary);">0</div>
+      </div>
+    </section>
+
+    <!-- SECTION TAB SWITCHER -->
+    <div class="tab-switcher">
+      <button class="tab-btn active" id="tab-btn-notice" onclick="switchSectionTab('notice')">Notices & Announcements</button>
+      <button class="tab-btn" id="tab-btn-learning" onclick="switchSectionTab('learning')">Affiliate Learning Content</button>
+    </div>
+
+    <!-- ==========================================================================
+       SECTION 1: NOTICES & ANNOUNCEMENTS MANAGEMENT
+       ========================================================================== -->
+    <main id="section-notices" class="content-section active">
+
+      <!-- CREATE NOTICE FORM -->
+      <section class="card-block">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Publish Platform Notice
+        </div>
+
+        <div class="form-grid-2col">
+          <!-- Inputs Column -->
+          <div>
+            <div class="form-group">
+              <label class="form-label">Notice Title</label>
+              <input type="text" id="notice-title" class="input-box" placeholder="e.g. Welcome to EarnPro Network!" oninput="updateNoticePreview()">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notice Description</label>
+              <textarea id="notice-desc" class="textarea-box" placeholder="Write notice details..." oninput="updateNoticePreview()"></textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">Notice Type</label>
+                <select id="notice-type" class="select-box" onchange="updateNoticePreview()">
+                  <option value="Announcement" selected>Announcement</option>
+                  <option value="Information">Information</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Warning">Warning</option>
+                  <option value="Reward">Reward</option>
+                  <option value="Update">Update</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Priority</label>
+                <select id="notice-priority" class="select-box" onchange="updateNoticePreview()">
+                  <option value="Normal" selected>Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">Target Page</label>
+                <select id="notice-target-page" class="select-box">
+                  <option value="all" selected>All Pages</option>
+                  <option value="home">Home Page</option>
+                  <option value="future_work">Future Work Page</option>
+                  <option value="referral">Referral Page</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Visibility</label>
+                <select id="notice-visibility" class="select-box">
+                  <option value="all" selected>All Users</option>
+                  <option value="active">Active Users</option>
+                  <option value="pending">Pending Users</option>
+                  <option value="subadmin">Sub Admins</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; background:rgba(10,15,26,0.5); padding:8px 12px; border-radius:var(--radius-md);">
+              <span style="font-weight:700; color:var(--text-muted); font-size:0.75rem;">PIN NOTICE TO TOP</span>
+              <label class="switch">
+                <input type="checkbox" id="notice-pin-toggle" onchange="updateNoticePreview()">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Preview Column -->
+          <div>
+            <label class="form-label">Live Notice Preview</label>
+            <div class="preview-card-box">
+              <div class="prev-tag-row">
+                <span id="prev-notice-tag" class="prev-badge" style="background:var(--accent-gold); color:#000;">ANNOUNCEMENT</span>
+                <span id="prev-notice-pin" style="display:none; font-size:11px;">📌 Pinned</span>
+              </div>
+              <div id="prev-notice-title" style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">Notice Title Preview</div>
+              <div id="prev-notice-desc" style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">Notice content will render here dynamically.</div>
+            </div>
+
+            <button class="btn-submit-blue" style="margin-top:16px;" onclick="publishNoticePayload()">
+              Publish Notice & Notify Users
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTICE LIST STACK -->
+      <section class="card-block">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Active Platform Notices
+        </div>
+
+        <div id="notice-list-container" class="list-card-stack">
+          <!-- Dynamic Realtime Notice Cards -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==========================================================================
+       SECTION 2: AFFILIATE LEARNING CONTENT MANAGEMENT
+       ========================================================================== -->
+    <main id="section-learning" class="content-section">
+
+      <!-- CREATE POST FORM -->
+      <section class="card-block">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 1 3-3h7z"/></svg>
+          Create Training & Learning Guide
+        </div>
+
+        <div class="form-grid-2col">
+          <div>
+            <div class="form-group">
+              <label class="form-label">Article / Post Title</label>
+              <input type="text" id="post-title" class="input-box" placeholder="e.g. How to Invite Friends Effectively">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select id="post-category" class="select-box">
+                <option value="Affiliate Guide">Affiliate Guide</option>
+                <option value="Future Work">Future Work Guide</option>
+                <option value="Referral Training">Referral Training</option>
+                <option value="Motivation">Motivational Post</option>
+                <option value="FAQ">FAQ</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Image Banner URL (Optional)</label>
+              <input type="url" id="post-image-url" class="input-box" placeholder="https://images.unsplash.com/...">
+            </div>
+          </div>
+
+          <div>
+            <div class="form-group">
+              <label class="form-label">Full Article Text Content</label>
+              <textarea id="post-desc" class="textarea-box" style="height:120px;" placeholder="Write detailed guide content..."></textarea>
+            </div>
+
+            <button class="btn-submit-blue" style="background:linear-gradient(135deg, var(--accent-purple) 0%, #7c3aed 100%);" onclick="publishLearningPostPayload()">
+              Publish Learning Post
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEARNING POSTS STACK -->
+      <section class="card-block">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Published Knowledge Base Articles
+        </div>
+
+        <div id="learning-posts-container" class="list-card-stack">
+          <!-- Dynamic Realtime Learning Posts -->
+        </div>
+      </section>
+
+    </main>
+
+  </div> <!-- /admin-container -->
+
+  <!-- JAVASCRIPT REALTIME NOTICE & CONTENT LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let noticesList = [];
+    let learningPostsList = [];
+    let allUsersMap = {};
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('users').on('value', (snapshot) => {
+      allUsersMap = snapshot.val() || {};
+    });
+
+    database.ref('notices').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      noticesList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+
+      // Sort Pinned First, then Newest First
+      noticesList.sort((a, b) => {
+        if (b.pinned !== a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+
+      calculateTopStats();
+      renderNoticeList();
+      hideLoader();
+    }, (error) => {
+      showToast("Error loading notices: " + error.message, "error");
+      hideLoader();
+    });
+
+    database.ref('learning_posts').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      learningPostsList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+
+      learningPostsList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      calculateTopStats();
+      renderLearningPosts();
+    });
+
+    // ==========================================================================
+    // 3. TAB SWITCHER & LIVE PREVIEW ENGINE
+    // ==========================================================================
+    function switchSectionTab(tab) {
+      document.getElementById('tab-btn-notice').classList.toggle('active', tab === 'notice');
+      document.getElementById('tab-btn-learning').classList.toggle('active', tab === 'learning');
+
+      document.getElementById('section-notices').classList.toggle('active', tab === 'notice');
+      document.getElementById('section-learning').classList.toggle('active', tab === 'learning');
+    }
+
+    function updateNoticePreview() {
+      const title = document.getElementById('notice-title').value.trim() || 'Notice Title Preview';
+      const desc = document.getElementById('notice-desc').value.trim() || 'Notice content will render here dynamically.';
+      const type = document.getElementById('notice-type').value;
+      const isPinned = document.getElementById('notice-pin-toggle').checked;
+
+      document.getElementById('prev-notice-title').textContent = title;
+      document.getElementById('prev-notice-desc').textContent = desc;
+
+      const tag = document.getElementById('prev-notice-tag');
+      tag.textContent = type.toUpperCase();
+
+      document.getElementById('prev-notice-pin').style.display = isPinned ? 'inline' : 'none';
+    }
+
+    function calculateTopStats() {
+      document.getElementById('stat-total-notices').textContent = noticesList.length;
+
+      let pinned = 0;
+      noticesList.forEach(n => { if (n.pinned) pinned++; });
+      document.getElementById('stat-pinned-notices').textContent = pinned;
+
+      document.getElementById('stat-total-posts').textContent = learningPostsList.length;
+
+      let published = 0;
+      learningPostsList.forEach(p => { if (p.status !== 'Hidden') published++; });
+      document.getElementById('stat-published-count').textContent = published;
+    }
+
+    // ==========================================================================
+    // 4. PUBLISH NOTICE & AUTO NOTIFY USERS
+    // ==========================================================================
+    async function publishNoticePayload() {
+      const title = document.getElementById('notice-title').value.trim();
+      const desc = document.getElementById('notice-desc').value.trim();
+
+      if (!title || !desc) {
+        showToast("Please provide both title and description.", "error");
+        return;
+      }
+
+      const type = document.getElementById('notice-type').value;
+      const priority = document.getElementById('notice-priority').value;
+      const targetPage = document.getElementById('notice-target-page').value;
+      const visibility = document.getElementById('notice-visibility').value;
+      const isPinned = document.getElementById('notice-pin-toggle').checked;
+      const now = Date.now();
+
+      const noticeId = database.ref('notices').push().key;
+
+      const noticeData = {
+        id: noticeId,
+        title: title,
+        message: desc,
+        badge: type.toUpperCase(),
+        priority: priority,
+        targetPage: targetPage,
+        visibility: visibility,
+        pinned: isPinned,
+        status: "Published",
+        timestamp: now
+      };
+
+      const updates = {};
+      updates[`notices/${noticeId}`] = noticeData;
+
+      // Dispatch Auto-Notification to Target Users
+      Object.keys(allUsersMap).forEach(uid => {
+        const user = allUsersMap[uid];
+        let isEligible = false;
+
+        if (visibility === 'all') isEligible = true;
+        else if (visibility === 'active' && user.accountStatus === 'active') isEligible = true;
+        else if (visibility === 'pending' && user.accountStatus === 'pending') isEligible = true;
+        else if (visibility === 'subadmin' && user.isSubAdmin) isEligible = true;
+
+        if (isEligible) {
+          const notifKey = database.ref(`notifications/${uid}`).push().key;
+          updates[`notifications/${uid}/${notifKey}`] = {
+            title: title,
+            message: desc,
+            timestamp: now
+          };
+        }
+      });
+
+      try {
+        await database.ref().update(updates);
+        document.getElementById('notice-title').value = '';
+        document.getElementById('notice-desc').value = '';
+        document.getElementById('notice-pin-toggle').checked = false;
+        updateNoticePreview();
+        showToast("Notice published successfully and users notified!", "success");
+      } catch (err) {
+        showToast("Error publishing notice: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 5. PUBLISH LEARNING POST
+    // ==========================================================================
+    async function publishLearningPostPayload() {
+      const title = document.getElementById('post-title').value.trim();
+      const desc = document.getElementById('post-desc').value.trim();
+      const category = document.getElementById('post-category').value;
+      const imageUrl = document.getElementById('post-image-url').value.trim();
+
+      if (!title || !desc) {
+        showToast("Please enter title and content.", "error");
+        return;
+      }
+
+      const postId = database.ref('learning_posts').push().key;
+      const now = Date.now();
+
+      const postData = {
+        id: postId,
+        title: title,
+        description: desc,
+        category: category,
+        imageUrl: imageUrl || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=500&auto=format&fit=crop&q=60",
+        status: "Published",
+        timestamp: now
+      };
+
+      try {
+        await database.ref(`learning_posts/${postId}`).set(postData);
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-desc').value = '';
+        document.getElementById('post-image-url').value = '';
+        showToast("Learning guide published successfully!", "success");
+      } catch (err) {
+        showToast("Error publishing post: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 6. NOTICE RENDERING & ACTIONS (PIN / DELETE)
+    // ==========================================================================
+    function renderNoticeList() {
+      const container = document.getElementById('notice-list-container');
+      container.innerHTML = '';
+
+      if (noticesList.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No notices published yet.</div>`;
+        return;
+      }
+
+      noticesList.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `item-card ${item.pinned ? 'pinned' : ''}`;
+
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent';
+
+        div.innerHTML = `
+          <div class="item-top-row">
+            <div style="font-weight:800; font-size:0.9rem;">
+              ${item.pinned ? '📌 ' : ''}${escapeHTML(item.title || 'Notice')}
+            </div>
+            <span style="font-size:9px; font-weight:800; color:var(--accent-gold); background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px;">
+              ${item.badge || 'NOTICE'}
+            </span>
+          </div>
+
+          <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">
+            ${escapeHTML(item.message || '')}
+          </div>
+
+          <div class="item-top-row" style="border-top:1px solid rgba(255,255,255,0.04); padding-top:6px; margin-top:4px;">
+            <span style="font-size:0.7rem; color:rgba(255,255,255,0.4);">${dateStr}</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-icon-sm ${item.pinned ? 'pinned' : ''}" onclick="togglePinNotice('${item.id}', ${item.pinned})">
+                ${item.pinned ? 'Unpin' : 'Pin'}
+              </button>
+              <button class="btn-icon-sm" style="color:var(--danger);" onclick="deleteNotice('${item.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function togglePinNotice(id, currentPinned) {
+      try {
+        await database.ref(`notices/${id}/pinned`).set(!currentPinned);
+        showToast(`Notice ${!currentPinned ? 'Pinned' : 'Unpinned'}.`, "success");
+      } catch (err) {
+        showToast("Error updating pin: " + err.message, "error");
+      }
+    }
+
+    async function deleteNotice(id) {
+      if (confirm("Are you sure you want to delete this notice?")) {
+        try {
+          await database.ref(`notices/${id}`).remove();
+          showToast("Notice deleted.", "success");
+        } catch (err) {
+          showToast("Error deleting notice: " + err.message, "error");
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 7. LEARNING POSTS RENDERING & DELETE
+    // ==========================================================================
+    function renderLearningPosts() {
+      const container = document.getElementById('learning-posts-container');
+      container.innerHTML = '';
+
+      if (learningPostsList.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No learning guides published yet.</div>`;
+        return;
+      }
+
+      learningPostsList.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+
+        div.innerHTML = `
+          <div class="item-top-row">
+            <div style="font-weight:800; font-size:0.9rem; color:var(--text-main);">
+              ${escapeHTML(item.title || 'Article')}
+            </div>
+            <span style="font-size:9px; font-weight:800; color:var(--accent-purple); background:rgba(139,92,246,0.15); padding:2px 6px; border-radius:4px;">
+              ${item.category || 'GUIDE'}
+            </span>
+          </div>
+
+          <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4;">
+            ${escapeHTML(item.description || '')}
+          </div>
+
+          <div class="item-top-row" style="border-top:1px solid rgba(255,255,255,0.04); padding-top:6px; margin-top:4px;">
+            <span style="font-size:0.7rem; color:rgba(255,255,255,0.4);">${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'Recent'}</span>
+            <button class="btn-icon-sm" style="color:var(--danger);" onclick="deleteLearningPost('${item.id}')">Delete Post</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function deleteLearningPost(id) {
+      if (confirm("Are you sure you want to delete this learning post?")) {
+        try {
+          await database.ref(`learning_posts/${id}`).remove();
+          showToast("Learning post deleted.", "success");
+        } catch (err) {
+          showToast("Error deleting post: " + err.message, "error");
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 8. HELPER FUNCTIONS
+    // ==========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
