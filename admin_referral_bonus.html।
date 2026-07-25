@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Main Admin - Referral Bonus Control Panel</title>
+
+  <!-- Google Fonts & Firebase Compatibility SDK -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       ========================================================================== */
+    :root {
+      --bg-dark: #060911;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-border: rgba(255, 255, 255, 0.12);
+      
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px 12px;
+      position: relative;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Ambient Background Glows */
+    .glow-bg {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .glow-1 { width: 380px; height: 380px; background: rgba(245, 158, 11, 0.1); top: -80px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.08); bottom: -80px; right: -80px; }
+
+    /* Admin Container */
+    .admin-container {
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 380px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.96);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: auto;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.success { border-left: 4px solid var(--primary); }
+    .toast.error { border-left: 4px solid var(--danger); }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header Bar */
+    .admin-header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--accent-gold);
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       2. SUMMARY & GLOBAL SETTINGS CARDS
+       ========================================================================== */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .summary-grid { grid-template-columns: repeat(5, 1fr); }
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+    }
+
+    .summary-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .summary-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    /* Global Setting Card */
+    .card-block {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .setting-flex-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input-box, .select-box {
+      padding: 9px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .btn-submit-gold {
+      background: linear-gradient(135deg, var(--accent-gold) 0%, #d97706 100%);
+      border: none;
+      color: white;
+      padding: 9px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.825rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+
+    /* ==========================================================================
+       3. SEARCH & MANUAL BONUS DISPATCH TOOL
+       ========================================================================== */
+    .toolbar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .btn-export {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--accent-gold);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Manual Bonus Dispatch Box */
+    .manual-bonus-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .manual-bonus-grid { grid-template-columns: 1.5fr 1fr 1.5fr auto; }
+    }
+
+    /* ==========================================================================
+       4. REFERRAL & REWARD DATA TABLE
+       ========================================================================== */
+    .table-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      margin-bottom: 20px;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .admin-table th {
+      background: rgba(30, 41, 59, 0.6);
+      padding: 14px 16px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+
+    .admin-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .user-profile-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-act {
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.725rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-add-bonus { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .btn-deduct-bonus { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* ==========================================================================
+       5. MODAL SYSTEM
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+      padding: 16px;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 3.5px solid rgba(245, 158, 11, 0.15);
+      border-top-color: var(--accent-gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container"></div>
+
+  <!-- Loading Animation Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing Referral Rewards...</div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+      <div class="brand-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        Main Admin
+      </div>
+      <span class="brand-badge">Referral Bonus Control</span>
+    </header>
+
+    <!-- TOP SUMMARY STATS -->
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Default Reward</div>
+        <div id="stat-default-reward" class="summary-value" style="color:var(--primary);">৳ 170</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Total Rewards Paid</div>
+        <div id="stat-total-rewards" class="summary-value" style="color:var(--primary);">৳ 0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Total Bonus Given</div>
+        <div id="stat-total-bonus" class="summary-value" style="color:var(--accent-gold);">৳ 0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Today's Referrals</div>
+        <div id="stat-today-count" class="summary-value" style="color:var(--accent-blue);">0</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Today's Bonus Total</div>
+        <div id="stat-today-bonus-sum" class="summary-value" style="color:var(--accent-purple);">৳ 0</div>
+      </div>
+    </section>
+
+    <!-- GLOBAL DEFAULT REWARD SETTING CARD -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Global Default Referral Reward Setting
+      </div>
+
+      <div class="setting-flex-row">
+        <label style="color:var(--text-muted); font-size:0.8rem; font-weight:600;">Default Base Reward (Taka):</label>
+        <input type="number" id="input-default-reward" class="input-box" style="width:120px;" placeholder="170" step="10">
+        <button class="btn-submit-gold" onclick="saveDefaultRewardSetting()">Update Global Base Reward</button>
+      </div>
+      <div style="font-size:0.725rem; color:var(--text-muted); margin-top:6px;">
+        * Note: Changing this value applies only to future account activations. Previous referral records remain unchanged.
+      </div>
+    </section>
+
+    <!-- MANUAL DIRECT BONUS DISPATCH TOOL -->
+    <section class="card-block">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Manual Direct Bonus Dispatch
+      </div>
+
+      <div class="manual-bonus-grid">
+        <select id="select-target-user" class="select-box">
+          <option value="" disabled selected>Select Target User...</option>
+        </select>
+        <input type="number" id="manual-bonus-amount" class="input-box" placeholder="Bonus (৳)" step="1">
+        <input type="text" id="manual-bonus-reason" class="input-box" placeholder="Reason for bonus...">
+        <button class="btn-submit-gold" style="background:linear-gradient(135deg, var(--primary) 0%, #059669 100%);" onclick="sendDirectUserBonus()">
+          Dispatch Bonus
+        </button>
+      </div>
+    </section>
+
+    <!-- SEARCH & TOOLBAR -->
+    <section class="toolbar-card">
+      <div class="search-row">
+        <input type="text" id="search-input" class="search-input" placeholder="Search by Referrer UID, Name, Referred User Name..." oninput="filterAndRenderReferrals()">
+        <button class="btn-export" onclick="exportReferralListCSV()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV Export
+        </button>
+      </div>
+    </section>
+
+    <!-- REFERRAL REWARDS TABLE -->
+    <section class="table-card">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Referrer Name</th>
+              <th>Referrer UID</th>
+              <th>Referred Member</th>
+              <th>Referred UID</th>
+              <th>Activation Date</th>
+              <th>Base Reward</th>
+              <th>Admin Bonus</th>
+              <th>Total Earned</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="referral-table-body">
+            <!-- Dynamic Realtime Referral Pairs -->
+          </tbody>
+        </table>
+        <div id="empty-table-msg" style="text-align:center; padding:30px; color:var(--text-muted); display:none;">
+          No matching referral pairs found.
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /admin-container -->
+
+  <!-- ADJUST BONUS MODAL -->
+  <div id="modal-adjust" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size:1rem; font-weight:800;">Adjust Referral Bonus</h3>
+        <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;" onclick="closeModal('modal-adjust')">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bonus Adjustment Amount (Taka)</label>
+        <input type="number" id="adj-bonus-amount" class="input-box" placeholder="e.g. 50" step="1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" id="adj-bonus-reason" class="input-box" placeholder="Enter reason...">
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button class="btn-act btn-add-bonus" style="flex:1; padding:10px;" onclick="executeBonusAdjustment('add')">Add Bonus (+)</button>
+        <button class="btn-act btn-deduct-bonus" style="flex:1; padding:10px;" onclick="executeBonusAdjustment('deduct')">Deduct (-)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT REALTIME REFERRAL BONUS LOGIC -->
+  <script>
+    // ==========================================================================
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ==========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBFKWIm1kUaP47rsHtEEP05G66-SSRsvwA",
+      authDomain: "gamil-sever.firebaseapp.com",
+      databaseURL: "https://gamil-sever-default-rtdb.firebaseio.com",
+      projectId: "gamil-sever",
+      storageBucket: "gamil-sever.firebasestorage.app",
+      messagingSenderId: "895391304528",
+      appId: "1:895391304528:web:4b86c59ce3163607beba55"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let allUsersMap = {};
+    let currentDefaultReward = 170;
+    let selectedReferralPair = null;
+
+    // ==========================================================================
+    // 2. REALTIME DATABASE LISTENERS
+    // ==========================================================================
+    database.ref('settings/defaultReferralReward').on('value', (snapshot) => {
+      currentDefaultReward = snapshot.val() || 170;
+      document.getElementById('stat-default-reward').textContent = `৳ ${currentDefaultReward}`;
+      document.getElementById('input-default-reward').value = currentDefaultReward;
+    });
+
+    database.ref('users').on('value', (snapshot) => {
+      allUsersMap = snapshot.val() || {};
+      populateTargetUserDropdown();
+      calculateTopSummaryStats();
+      filterAndRenderReferrals();
+      hideLoader();
+    }, (error) => {
+      showToast("Database sync error: " + error.message, "error");
+      hideLoader();
+    });
+
+    // ==========================================================================
+    // 3. TOP SUMMARY STATS CALCULATIONS
+    // ==========================================================================
+    function calculateTopSummaryStats() {
+      let totalRewardsSum = 0;
+      let totalBonusSum = 0;
+      let todayRefCount = 0;
+      let todayBonusSum = 0;
+
+      const todayStr = new Date().toDateString();
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+
+        if (u.accountStatus === 'active' && u.referredBy) {
+          const baseReward = 170;
+          const bonus = u.adminBonusGiven || 0;
+
+          totalRewardsSum += (baseReward + bonus);
+          totalBonusSum += bonus;
+
+          if (u.activationDate && new Date(u.activationDate).toDateString() === todayStr) {
+            todayRefCount++;
+            todayBonusSum += bonus;
+          }
+        }
+      });
+
+      document.getElementById('stat-total-rewards').textContent = `৳ ${totalRewardsSum}`;
+      document.getElementById('stat-total-bonus').textContent = `৳ ${totalBonusSum}`;
+      document.getElementById('stat-today-count').textContent = todayRefCount;
+      document.getElementById('stat-today-bonus-sum').textContent = `৳ ${todayBonusSum}`;
+    }
+
+    // ==========================================================================
+    // 4. GLOBAL SETTING UPDATE
+    // ==========================================================================
+    async function saveDefaultRewardSetting() {
+      const val = parseInt(document.getElementById('input-default-reward').value) || 170;
+
+      try {
+        await database.ref('settings/defaultReferralReward').set(val);
+        showToast(`Default Referral Reward updated to ৳${val}!`, "success");
+      } catch (err) {
+        showToast("Error updating default reward: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 5. MANUAL DIRECT USER BONUS DISPATCH
+    // ==========================================================================
+    function populateTargetUserDropdown() {
+      const select = document.getElementById('select-target-user');
+      select.innerHTML = '<option value="" disabled selected>Select Target User...</option>';
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${u.name || 'User'} (UID: ${u.uid || 'N/A'}) - Bal: ৳${(u.balance || 0).toFixed(2)}`;
+        select.appendChild(option);
+      });
+    }
+
+    async function sendDirectUserBonus() {
+      const targetAuthUid = document.getElementById('select-target-user').value;
+      const amount = parseFloat(document.getElementById('manual-bonus-amount').value) || 0;
+      const reason = document.getElementById('manual-bonus-reason').value.trim() || 'Admin Bonus Reward';
+
+      if (!targetAuthUid) {
+        showToast("Please select a target user.", "error");
+        return;
+      }
+
+      if (amount <= 0) {
+        showToast("Bonus amount must be greater than zero.", "error");
+        return;
+      }
+
+      const user = allUsersMap[targetAuthUid];
+      if (!user) return;
+
+      if (confirm(`Dispatch ৳${amount} bonus to ${user.name}?`)) {
+        const newBal = (user.balance || 0) + amount;
+        const newTotalEarnings = (user.totalEarnings || 0) + amount;
+        const now = Date.now();
+
+        const updates = {};
+        updates[`users/${targetAuthUid}/balance`] = newBal;
+        updates[`users/${targetAuthUid}/totalEarnings`] = newTotalEarnings;
+
+        // Add Notification
+        const notifKey = database.ref(`notifications/${targetAuthUid}`).push().key;
+        updates[`notifications/${targetAuthUid}/${notifKey}`] = {
+          title: "Admin Bonus Received!",
+          message: `Congratulations! You received an admin bonus of ৳${amount}. Reason: ${reason}`,
+          timestamp: now
+        };
+
+        // Record History
+        const histKey = database.ref('referral_bonus_history').push().key;
+        updates[`referral_bonus_history/${histKey}`] = {
+          targetAuthUid: targetAuthUid,
+          userName: user.name,
+          userUid: user.uid,
+          amount: amount,
+          type: "manual_bonus",
+          reason: reason,
+          timestamp: now
+        };
+
+        try {
+          await database.ref().update(updates);
+          document.getElementById('manual-bonus-amount').value = '';
+          document.getElementById('manual-bonus-reason').value = '';
+          showToast(`৳${amount} bonus successfully sent to ${user.name}!`, "success");
+        } catch (err) {
+          showToast("Error sending bonus: " + err.message, "error");
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 6. REFERRAL TABLE RENDERING & FILTER
+    // ==========================================================================
+    function filterAndRenderReferrals() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      const pairs = [];
+
+      Object.keys(allUsersMap).forEach(key => {
+        const referredUser = allUsersMap[key];
+
+        if (referredUser.accountStatus === 'active' && referredUser.referredBy) {
+          // Find Referrer in allUsersMap
+          const referrerAuthUid = Object.keys(allUsersMap).find(rKey => {
+            const r = allUsersMap[rKey];
+            return (r.uid && r.uid.toString() === referredUser.referredBy.toString()) ||
+                   (r.referralCode && r.referralCode.toString() === referredUser.referredBy.toString());
+          });
+
+          if (referrerAuthUid) {
+            const referrer = allUsersMap[referrerAuthUid];
+            pairs.push({
+              referrerAuthUid: referrerAuthUid,
+              referrerName: referrer.name || 'Referrer',
+              referrerUid: referrer.uid || referrer.referralCode || '------',
+              referredAuthUid: key,
+              referredName: referredUser.name || 'Member',
+              referredUid: referredUser.uid || '------',
+              activationDate: referredUser.activationDate || Date.now(),
+              adminBonusGiven: referredUser.adminBonusGiven || 0
+            });
+          }
+        }
+      });
+
+      // Filter Search Term
+      let filtered = pairs;
+      if (searchTerm) {
+        filtered = pairs.filter(p => 
+          p.referrerName.toLowerCase().includes(searchTerm) ||
+          p.referrerUid.toString().toLowerCase().includes(searchTerm) ||
+          p.referredName.toLowerCase().includes(searchTerm) ||
+          p.referredUid.toString().toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Sort Newest First
+      filtered.sort((a, b) => b.activationDate - a.activationDate);
+
+      renderReferralTable(filtered);
+    }
+
+    function renderReferralTable(list) {
+      const tbody = document.getElementById('referral-table-body');
+      const emptyMsg = document.getElementById('empty-table-msg');
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      }
+      emptyMsg.style.display = 'none';
+
+      list.forEach(p => {
+        const tr = document.createElement('tr');
+        const baseReward = 170;
+        const total = baseReward + p.adminBonusGiven;
+        const actDate = p.activationDate ? new Date(p.activationDate).toLocaleDateString() : 'N/A';
+
+        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.referrerName)}&background=10b981&color=fff`;
+
+        tr.innerHTML = `
+          <td>
+            <div class="user-profile-cell">
+              <img class="user-avatar" src="${avatar}" alt="Avatar">
+              <div style="font-weight:700;">${escapeHTML(p.referrerName)}</div>
+            </div>
+          </td>
+          <td><span style="font-weight:700; color:var(--accent-gold);">${p.referrerUid}</span></td>
+          <td><span style="font-weight:700;">${escapeHTML(p.referredName)}</span></td>
+          <td><span style="color:var(--text-muted);">${p.referredUid}</span></td>
+          <td style="font-size:0.75rem; color:var(--text-muted);">${actDate}</td>
+          <td style="font-weight:700;">৳ ${baseReward}</td>
+          <td style="font-weight:700; color:var(--accent-gold);">৳ ${p.adminBonusGiven}</td>
+          <td style="font-weight:800; color:var(--primary);">৳ ${total}</td>
+          <td>
+            <button class="btn-act btn-add-bonus" onclick="openAdjustModal('${p.referrerAuthUid}', '${p.referredAuthUid}')">
+              Adjust Bonus
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================================================
+    // 7. PER-REFERRAL BONUS ADJUSTMENT
+    // ==========================================================================
+    function openAdjustModal(referrerAuthUid, referredAuthUid) {
+      selectedReferralPair = { referrerAuthUid, referredAuthUid };
+      document.getElementById('adj-bonus-amount').value = '';
+      document.getElementById('adj-bonus-reason').value = '';
+      document.getElementById('modal-adjust').classList.add('active');
+    }
+
+    async function executeBonusAdjustment(type) {
+      if (!selectedReferralPair) return;
+
+      const amount = parseFloat(document.getElementById('adj-bonus-amount').value) || 0;
+      const reason = document.getElementById('adj-bonus-reason').value.trim() || 'Admin referral bonus adjustment';
+
+      if (amount <= 0) {
+        showToast("Adjustment amount must be greater than zero.", "error");
+        return;
+      }
+
+      const referrer = allUsersMap[selectedReferralPair.referrerAuthUid];
+      const referred = allUsersMap[selectedReferralPair.referredAuthUid];
+
+      if (!referrer || !referred) return;
+
+      const currentBonus = referred.adminBonusGiven || 0;
+      let newBonus = currentBonus;
+      let balanceChange = 0;
+
+      if (type === 'add') {
+        newBonus += amount;
+        balanceChange = amount;
+      } else if (type === 'deduct') {
+        const deductAmt = Math.min(currentBonus, amount);
+        newBonus -= deductAmt;
+        balanceChange = -deductAmt;
+      }
+
+      const newReferrerBal = Math.max(0, (referrer.balance || 0) + balanceChange);
+      const now = Date.now();
+
+      const updates = {};
+      updates[`users/${selectedReferralPair.referredAuthUid}/adminBonusGiven`] = newBonus;
+      updates[`users/${selectedReferralPair.referrerAuthUid}/balance`] = newReferrerBal;
+
+      // Add Notification
+      const notifKey = database.ref(`notifications/${selectedReferralPair.referrerAuthUid}`).push().key;
+      updates[`notifications/${selectedReferralPair.referrerAuthUid}/${notifKey}`] = {
+        title: type === 'add' ? "Referral Bonus Added!" : "Referral Bonus Adjusted",
+        message: `${type === 'add' ? `৳${amount} extra bonus added for referral (${referred.name}).` : `৳${Math.abs(balanceChange)} bonus adjusted for referral (${referred.name}).`} Reason: ${reason}`,
+        timestamp: now
+      };
+
+      try {
+        await database.ref().update(updates);
+        closeModal('modal-adjust');
+        showToast(`Referral bonus updated successfully!`, "success");
+      } catch (err) {
+        showToast("Error updating bonus: " + err.message, "error");
+      }
+    }
+
+    // ==========================================================================
+    // 8. CSV EXPORT TOOL
+    // ==========================================================================
+    function exportReferralListCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,Referrer Name,Referrer UID,Referred Member,Referred UID,Activation Date,Base Reward,Admin Bonus,Total Reward\n";
+
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        if (u.accountStatus === 'active' && u.referredBy) {
+          const referrerAuthUid = Object.keys(allUsersMap).find(rKey => {
+            const r = allUsersMap[rKey];
+            return (r.uid && r.uid.toString() === u.referredBy.toString()) ||
+                   (r.referralCode && r.referralCode.toString() === u.referredBy.toString());
+          });
+
+          if (referrerAuthUid) {
+            const referrer = allUsersMap[referrerAuthUid];
+            const baseReward = 170;
+            const bonus = u.adminBonusGiven || 0;
+            csvContent += `"${referrer.name || ''}","${referrer.uid || ''}","${u.name || ''}","${u.uid || ''}","${u.activationDate ? new Date(u.activationDate).toLocaleDateString() : ''}","${baseReward}","${bonus}","${baseReward + bonus}"\n`;
+          }
+        }
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "EarnPro_Referral_Bonus_List.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ==========================================================================
+    // 9. HELPER FUNCTIONS
+    // ==========================================================================
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const iconSvg = type === 'success' 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loading-overlay');
+      loader.style.opacity = '0';
+      loader.style.visibility = 'hidden';
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
