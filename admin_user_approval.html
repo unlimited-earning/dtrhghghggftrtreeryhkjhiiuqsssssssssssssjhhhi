@@ -8,7 +8,7 @@
   <!-- Google Fonts & Firebase Compatibility SDK -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -69,7 +69,7 @@
     .glow-1 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.1); top: -80px; left: -80px; }
     .glow-2 { width: 380px; height: 380px; background: rgba(245, 158, 11, 0.08); bottom: -80px; right: -80px; }
 
-    /* Admin Container */
+    /* Layout Container */
     .admin-container {
       max-width: 1250px;
       margin: 0 auto;
@@ -322,23 +322,46 @@
     .badge-active { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
     .badge-rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-    .btn-act-group { display: flex; gap: 4px; }
+    .btn-act-group { display: flex; gap: 6px; }
 
     .btn-act {
-      padding: 5px 10px;
+      padding: 7px 14px;
       border-radius: var(--radius-sm);
-      font-size: 0.725rem;
+      font-size: 0.75rem;
       font-weight: 700;
       border: none;
       cursor: pointer;
       transition: var(--transition);
     }
 
-    .btn-view { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
-    .btn-approve { background: rgba(16, 185, 129, 0.15); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .btn-reject { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-view {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .btn-view:hover { background: var(--accent-blue); color: white; }
 
-    .btn-approve:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* Direct Clickable Approve Button */
+    .btn-approve {
+      background: rgba(16, 185, 129, 0.25);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+    .btn-approve:hover {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .btn-reject {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .btn-reject:hover { background: var(--danger); color: white; }
+
+    .btn-act:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ==========================================================================
        5. MODAL SYSTEM & BONUS SELECTOR
@@ -346,7 +369,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
@@ -369,6 +392,7 @@
       max-width: 500px;
       max-height: 88vh;
       overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
     }
 
     .modal-header {
@@ -391,7 +415,6 @@
     .detail-lbl { color: var(--text-muted); font-weight: 600; }
     .detail-val { font-weight: 700; color: var(--text-main); text-align: right; }
 
-    /* Bonus Selector Buttons Grid */
     .bonus-btn-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -412,17 +435,6 @@
     }
 
     .btn-bonus.selected { background: var(--primary); border-color: var(--primary); color: white; }
-
-    .validation-warning-box {
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      color: var(--accent-gold);
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
 
     #loading-overlay {
       position: fixed;
@@ -456,10 +468,10 @@
   <!-- Toast Notification System -->
   <div id="toast-container"></div>
 
-  <!-- Loading Animation -->
+  <!-- Loading Animation Overlay -->
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing User Registrations...</div>
+    <div style="margin-top:14px; font-weight:600; color:var(--text-muted);">Syncing Realtime Database...</div>
   </div>
 
   <div class="admin-container">
@@ -575,16 +587,11 @@
         <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;" onclick="closeModal('modal-view')">&times;</button>
       </div>
 
-      <!-- Payment Verification Requirement Warning -->
-      <div id="payment-warning-box" class="validation-warning-box" style="display:none;">
-        ⚠️ Payment status is <strong>Pending</strong>. You must verify payment before approving account activation.
-      </div>
-
       <div id="view-modal-content"></div>
 
       <div id="approval-action-buttons" style="display:flex; gap:8px; margin-top:16px;">
         <button id="btn-open-approve" class="btn-act btn-approve" style="flex:1; padding:10px; font-size:0.8rem;" onclick="openApproveModal()">
-          Approve Account
+          Approve User Account
         </button>
         <button class="btn-act btn-reject" style="flex:1; padding:10px; font-size:0.8rem;" onclick="openRejectModal()">
           Reject Account
@@ -593,19 +600,23 @@
     </div>
   </div>
 
-  <!-- APPROVE & REFERRAL BONUS POPUP MODAL -->
+  <!-- APPROVAL CONFIRMATION POPUP MODAL -->
   <div id="modal-approve" class="modal-backdrop">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 style="font-size:1rem; font-weight:800; color:var(--primary);">Approve & Activate Account</h3>
+        <h3 style="font-size:1.05rem; font-weight:800; color:var(--primary);">Approve User Account</h3>
         <button style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;" onclick="closeModal('modal-approve')">&times;</button>
       </div>
 
-      <div class="detail-row"><span class="detail-lbl">Activation Fee Collection:</span><span class="detail-val" style="color:var(--primary); font-size:1rem;">520 Taka</span></div>
+      <p style="font-size:0.85rem; color:var(--text-main); margin-bottom:12px; font-weight:600;">
+        Are you sure you want to activate this user's account?
+      </p>
+
+      <div class="detail-row"><span class="detail-lbl">Activation Fee Collection:</span><span class="detail-val" style="color:var(--primary); font-size:0.95rem;">520 Taka</span></div>
       <div class="detail-row"><span class="detail-lbl">Base Referral Reward:</span><span class="detail-val">170 Taka</span></div>
 
-      <div style="margin-top:14px;">
-        <label class="form-label">Admin Optional Extra Bonus (Taka)</label>
+      <div style="margin-top:12px;">
+        <label style="display:block; font-size:0.725rem; font-weight:700; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase;">Admin Extra Bonus (Optional)</label>
         <div class="bonus-btn-grid">
           <button type="button" class="btn-bonus selected" onclick="selectBonus(0, this)">0</button>
           <button type="button" class="btn-bonus" onclick="selectBonus(20, this)">20</button>
@@ -617,14 +628,14 @@
 
       <div class="detail-row" style="background:rgba(16,185,129,0.08); padding:10px; border-radius:8px; margin-bottom:16px;">
         <span class="detail-lbl">Total Referrer Credit:</span>
-        <span id="total-referrer-credit-txt" class="detail-val" style="color:var(--primary); font-size:1rem;">170 Taka</span>
+        <span id="total-referrer-credit-txt" class="detail-val" style="color:var(--primary); font-size:0.95rem;">170 Taka</span>
       </div>
 
       <div style="display:flex; gap:8px;">
-        <button class="btn-act btn-approve" style="flex:1; padding:12px; font-size:0.85rem;" onclick="confirmApproveAccount()">
-          Confirm Activation & Dispatch Commissions
+        <button id="btn-confirm-approve-action" class="btn-act btn-approve" style="flex:1; padding:12px; font-size:0.85rem;" onclick="confirmApproveAccount()">
+          Approve
         </button>
-        <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:12px; border-radius:var(--radius-sm); font-weight:700;" onclick="closeModal('modal-approve')">Cancel</button>
+        <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:12px; border-radius:var(--radius-sm); font-weight:700; flex:1;" onclick="closeModal('modal-approve')">Cancel</button>
       </div>
     </div>
   </div>
@@ -643,7 +654,7 @@
       </div>
 
       <div style="display:flex; gap:8px;">
-        <button class="btn-act btn-reject" style="padding:10px;" onclick="confirmRejectAccount()">Confirm Rejection</button>
+        <button class="btn-act btn-reject" style="padding:10px; flex:1;" onclick="confirmRejectAccount()">Confirm Rejection</button>
         <button style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--card-border); padding:10px; border-radius:var(--radius-sm); font-weight:700; flex:1;" onclick="closeModal('modal-reject')">Cancel</button>
       </div>
     </div>
@@ -834,7 +845,7 @@
             <div class="btn-act-group">
               <button class="btn-act btn-view" onclick="openViewModal('${u.authUid}')">View</button>
               ${status === 'pending' ? `
-                <button class="btn-act btn-approve" ${paymentStatus !== 'Verified' ? 'disabled' : ''} onclick="openViewModal('${u.authUid}')">Approve</button>
+                <button class="btn-act btn-approve" onclick="openApproveModalDirect('${u.authUid}')">Approve</button>
               ` : ''}
             </div>
           </td>
@@ -878,25 +889,18 @@
         <div class="detail-row"><span class="detail-lbl">Referred By:</span><span class="detail-val">${escapeHTML(referrerName)} (UID: ${referrerUid})</span></div>
       `;
 
-      // Show Warning if payment not verified
-      const warningBox = document.getElementById('payment-warning-box');
-      const approveBtn = document.getElementById('btn-open-approve');
-
-      if (paymentStatus !== 'Verified' && u.accountStatus === 'pending') {
-        warningBox.style.display = 'block';
-        approveBtn.disabled = true;
-      } else {
-        warningBox.style.display = 'none';
-        approveBtn.disabled = false;
-      }
-
       document.getElementById('approval-action-buttons').style.display = u.accountStatus === 'pending' ? 'flex' : 'none';
       document.getElementById('modal-view').classList.add('active');
     }
 
     // ==========================================================================
-    // 6. APPROVAL TRANSACTION & CASCADING SUB ADMIN COMMISSIONS
+    // 6. APPROVAL WORKFLOW & CASCADING COMMISSIONS ENGINE
     // ==========================================================================
+    function openApproveModalDirect(authUid) {
+      selectedUserAuthUid = authUid;
+      openApproveModal();
+    }
+
     function openApproveModal() {
       selectedAdminBonus = 0;
       updateBonusDisplay();
@@ -921,26 +925,32 @@
       const user = allUsersMap[selectedUserAuthUid];
       if (!user) return;
 
+      const confirmBtn = document.getElementById('btn-confirm-approve-action');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Processing...";
+
       const now = Date.now();
       const bonus = selectedAdminBonus || 0;
       const totalRefReward = 170 + bonus;
       const updates = {};
 
-      // 1. Activate User Account
+      // 1. Activate User Account & Set paymentStatus to Verified
       updates[`users/${selectedUserAuthUid}/accountStatus`] = 'active';
+      updates[`users/${selectedUserAuthUid}/paymentStatus`] = 'Verified';
       updates[`users/${selectedUserAuthUid}/activationDate`] = now;
+      updates[`users/${selectedUserAuthUid}/approvalTime`] = now;
       updates[`users/${selectedUserAuthUid}/approvedBy`] = 'Main Admin';
       updates[`users/${selectedUserAuthUid}/adminBonusGiven`] = bonus;
 
       // User Notification
       const userNotifKey = database.ref(`notifications/${selectedUserAuthUid}`).push().key;
       updates[`notifications/${selectedUserAuthUid}/${userNotifKey}`] = {
-        title: "Account Activated!",
-        message: "Congratulations! Your account has been officially activated by Main Admin. Start earning!",
+        title: "Account Activated Successfully!",
+        message: "Your account has been activated successfully.",
         timestamp: now
       };
 
-      // 2. Referrer Reward (170 + Admin Bonus)
+      // 2. Referrer Reward (170 Taka Base + Admin Bonus)
       if (user.referredBy) {
         const referrerAuthUid = Object.keys(allUsersMap).find(k => {
           const r = allUsersMap[k];
@@ -963,13 +973,13 @@
           const refNotifKey = database.ref(`notifications/${referrerAuthUid}`).push().key;
           updates[`notifications/${referrerAuthUid}/${refNotifKey}`] = {
             title: "Referral Reward Received!",
-            message: `Congratulations! Your referred member (${user.name}) is activated. You earned ৳170${bonus > 0 ? ` + ৳${bonus} Bonus` : ''}!`,
+            message: `You received 170 Taka referral reward${bonus > 0 ? ` + ৳${bonus} extra bonus` : ''}.`,
             timestamp: now
           };
         }
       }
 
-      // 3. CASCADING SUB ADMIN COMMISSIONS ENGINE:
+      // 3. CASCADING SUB ADMIN REWARDS ENGINE:
       // Tier 1: WhatsApp Admin (100 Taka)
       if (user.acceptedBy && allUsersMap[user.acceptedBy]) {
         const waAdminAuthUid = user.acceptedBy;
@@ -982,8 +992,8 @@
 
         const waNotifKey = database.ref(`notifications/${waAdminAuthUid}`).push().key;
         updates[`notifications/${waAdminAuthUid}/${waNotifKey}`] = {
-          title: "Activation Commission (+৳100)",
-          message: `Assigned user (${user.name}) activated! ৳100 added to your Weekly Balance.`,
+          title: "Sub Admin Reward",
+          message: "You earned 100 Taka.",
           timestamp: now
         };
 
@@ -997,8 +1007,8 @@
 
           const tlNotifKey = database.ref(`notifications/${tlAuthUid}`).push().key;
           updates[`notifications/${tlAuthUid}/${tlNotifKey}`] = {
-            title: "Team Activation Commission (+৳30)",
-            message: `Team member (${waAdmin.name}) activated a user (${user.name}). ৳30 added to Weekly Balance.`,
+            title: "Team Leader Reward",
+            message: "You earned 30 Taka.",
             timestamp: now
           };
 
@@ -1012,8 +1022,8 @@
 
             const clNotifKey = database.ref(`notifications/${clAuthUid}`).push().key;
             updates[`notifications/${clAuthUid}/${clNotifKey}`] = {
-              title: "Class Leadership Commission (+৳20)",
-              message: `Managed Team Leader (${tlUser.name}) achieved an activation! ৳20 added to Weekly Balance.`,
+              title: "Class Leader Reward",
+              message: "You earned 20 Taka.",
               timestamp: now
             };
           }
@@ -1027,6 +1037,9 @@
         closeModal('modal-view');
       } catch (err) {
         showToast("Error activating account: " + err.message, "error");
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Approve";
       }
     }
 
