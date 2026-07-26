@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Main Admin - Master Control Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EarnPro - Master Admin Control Center</title>
 
   <!-- Google Fonts & Firebase Compatibility SDK -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <style>
     /* ==========================================================================
-       1. GLOBAL STYLES & GLASSMORPHISM THEME
+       1. FINTECH GLASSMORPHISM THEME & DESIGN SYSTEM
        ========================================================================== */
     :root {
       --bg-dark: #060911;
@@ -27,17 +27,23 @@
       --accent-gold: #f59e0b;
       --accent-blue: #3b82f6;
       --accent-purple: #8b5cf6;
+      --wa-green: #25D366;
       --danger: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --input-bg: rgba(15, 23, 42, 0.65);
+      --input-bg: rgba(10, 15, 26, 0.65);
       --input-border: rgba(255, 255, 255, 0.12);
       
-      --radius-xl: 20px;
-      --radius-lg: 14px;
-      --radius-md: 10px;
-      --radius-sm: 6px;
+      --radius-xl: 22px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
       --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Spacing Metrics */
+      --page-pad: 12px;
+      --card-gap: 12px;
+      --section-gap: 20px;
     }
 
     * {
@@ -52,11 +58,11 @@
       background-color: var(--bg-dark);
       color: var(--text-main);
       min-height: 100vh;
+      padding: var(--page-pad);
       position: relative;
+      overflow-x: hidden;
       font-size: 13px;
       line-height: 1.4;
-      display: flex;
-      flex-direction: column;
     }
 
     /* Ambient Background Glows */
@@ -67,10 +73,16 @@
       z-index: -1;
       pointer-events: none;
     }
-    .glow-1 { width: 400px; height: 400px; background: rgba(16, 185, 129, 0.1); top: -100px; left: -100px; }
-    .glow-2 { width: 400px; height: 400px; background: rgba(59, 130, 246, 0.08); bottom: -100px; right: -100px; }
+    .glow-1 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.12); top: -80px; left: -80px; }
+    .glow-2 { width: 380px; height: 380px; background: rgba(59, 130, 246, 0.1); bottom: -80px; right: -80px; }
 
-    /* Toast Container */
+    /* Admin Container */
+    .admin-container {
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    /* Toast Notification System */
     #toast-container {
       position: fixed;
       top: 16px;
@@ -135,130 +147,119 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ==========================================================================
-       2. STICKY HEADER & COLLAPSIBLE SIDEBAR
+       2. TOP HEADER BAR
        ========================================================================== */
-    .sticky-header {
-      position: sticky;
-      top: 0;
-      z-index: 900;
-      background: rgba(8, 12, 20, 0.88);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--card-border);
+    .top-header-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
       padding: 12px 16px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
-    .menu-toggle-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      color: var(--text-main);
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-sm);
+    .admin-profile-meta {
       display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      gap: 10px;
     }
 
-    .brand-title-sm {
-      font-size: 1.1rem;
+    .admin-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .admin-name-title {
+      font-size: 0.95rem;
       font-weight: 800;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .live-clock-badge {
+    .online-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      display: inline-block;
+    }
+
+    .header-right-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .time-badge {
       font-size: 0.7rem;
       font-weight: 700;
       color: var(--accent-gold);
       background: rgba(245, 158, 11, 0.12);
-      padding: 4px 8px;
-      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
     }
 
-    /* Sidebar Drawer */
-    .sidebar-drawer {
-      position: fixed;
-      top: 0;
-      left: -280px;
-      width: 270px;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.97);
-      backdrop-filter: blur(20px);
-      border-right: 1px solid var(--card-border);
-      z-index: 9999;
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 20px 16px;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    /* ==========================================================================
+       3. WELCOME HERO CARD
+       ========================================================================== */
+    .welcome-hero-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(18, 26, 43, 0.85) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius-xl);
+      padding: 18px 16px;
+      margin-bottom: var(--section-gap);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
-    .sidebar-drawer.open { left: 0; }
-
-    .sidebar-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--card-border);
+    .hero-greeting {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
     }
 
-    .sidebar-menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .sidebar-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: var(--radius-md);
+    .hero-sub {
+      font-size: 0.8rem;
       color: var(--text-muted);
+      margin-top: 2px;
+      margin-bottom: 14px;
+    }
+
+    .pending-tasks-pill-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .task-pill {
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      text-align: center;
       text-decoration: none;
-      font-weight: 600;
-      font-size: 0.85rem;
+      color: var(--text-main);
       transition: var(--transition);
     }
 
-    .sidebar-link:hover, .sidebar-link.active {
-      background: var(--primary-glow);
-      color: var(--primary);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
+    .task-pill:active { transform: scale(0.97); }
 
-    .sidebar-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      z-index: 9998;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
+    .pill-lbl { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .pill-num { font-size: 14px; font-weight: 800; color: var(--accent-gold); margin-top: 2px; }
 
-    .sidebar-overlay.active { opacity: 1; pointer-events: all; }
-
-    /* ==========================================================================
-       3. MAIN LAYOUT & CARDS
-       ========================================================================== */
-    .dashboard-body {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 16px;
-      width: 100%;
-    }
-
+    /* Section Header */
     .section-head {
       font-size: 0.95rem;
       font-weight: 700;
@@ -266,33 +267,38 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      color: var(--text-main);
     }
 
     .section-head svg { stroke: var(--primary); }
 
-    /* Quick Overview Stats Grid */
-    .stats-4col {
+    /* ==========================================================================
+       4. QUICK OVERVIEW & FINANCIAL STATS GRID
+       ========================================================================== */
+    .stats-grid-2col {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: var(--card-gap);
+      margin-bottom: var(--section-gap);
     }
 
     @media (min-width: 768px) {
-      .stats-4col { grid-template-columns: repeat(4, 1fr); }
+      .stats-grid-2col { grid-template-columns: repeat(4, 1fr); }
     }
 
-    .stat-card-box {
+    .stat-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(16px);
       border-radius: var(--radius-lg);
       padding: 14px;
-      position: relative;
+      transition: var(--transition);
     }
 
-    .stat-lbl {
-      font-size: 0.7rem;
+    .stat-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, 0.3); }
+
+    .stat-lbl-sm {
+      font-size: 10px;
       color: var(--text-muted);
       font-weight: 700;
       text-transform: uppercase;
@@ -300,46 +306,80 @@
       margin-bottom: 4px;
     }
 
-    .stat-num {
-      font-size: 1.4rem;
+    .stat-val-lg {
+      font-size: 20px;
       font-weight: 800;
       color: var(--text-main);
+      line-height: 1.2;
     }
 
-    /* Pending Action Shortcut Cards */
-    .pending-action-grid {
+    /* ==========================================================================
+       5. LARGE PREMIUM QUICK ACTION BUTTONS
+       ========================================================================== */
+    .quick-actions-3col {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--card-gap);
+      margin-bottom: var(--section-gap);
     }
 
     @media (min-width: 768px) {
-      .pending-action-grid { grid-template-columns: repeat(4, 1fr); }
+      .quick-actions-3col { grid-template-columns: repeat(6, 1fr); }
     }
 
-    .action-link-card {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(18, 26, 43, 0.85) 100%);
-      border: 1px solid rgba(245, 158, 11, 0.25);
+    .action-square-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       backdrop-filter: blur(16px);
       border-radius: var(--radius-lg);
-      padding: 14px;
-      text-decoration: none;
-      color: var(--text-main);
+      height: 92px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      color: var(--text-main);
       transition: var(--transition);
+      padding: 6px;
     }
 
-    .action-link-card:hover { transform: translateY(-2px); border-color: var(--accent-gold); }
+    .action-square-card:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.08);
+    }
 
-    .action-title { font-size: 0.8rem; font-weight: 700; }
-    .action-count-badge { font-size: 1.25rem; font-weight: 800; color: var(--accent-gold); }
+    .icon-box-sm {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-square-card:hover .icon-box-sm {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .action-square-card:hover .icon-box-sm svg { stroke: white; }
+
+    .action-txt {
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
 
     /* ==========================================================================
-       4. REVENUE & SYSTEM STATUS
+       6. REALTIME ACTIVITY FEED & LIST STACKS
        ========================================================================== */
     .card-block {
       background: var(--card-bg);
@@ -347,76 +387,27 @@
       backdrop-filter: blur(16px);
       border-radius: var(--radius-lg);
       padding: 16px;
-      margin-bottom: 20px;
+      margin-bottom: var(--section-gap);
     }
 
-    .revenue-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    .list-stack {
+      display: flex;
+      flex-direction: column;
       gap: 10px;
     }
 
-    @media (min-width: 768px) {
-      .revenue-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    .rev-mini-box {
+    .list-item-card {
       background: rgba(10, 15, 26, 0.5);
       border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
       padding: 12px;
-      border-radius: var(--radius-md);
-    }
-
-    /* System Status Policy Grid */
-    .status-list-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      font-size: 0.8rem;
-    }
-
-    .status-item {
-      background: rgba(10, 15, 26, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    /* ==========================================================================
-       5. CHARTS & RECENT USERS TABLE
-       ========================================================================== */
-    .chart-container {
-      width: 100%;
-      height: 180px;
-      margin-top: 10px;
-      position: relative;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .recent-user-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .recent-user-card {
-      background: rgba(10, 15, 26, 0.5);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
 
-    .user-left {
+    .item-left {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -424,227 +415,379 @@
     }
 
     .user-avatar-sm {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       object-fit: cover;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
       flex-shrink: 0;
     }
 
-    .badge-status-sm {
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      text-transform: uppercase;
+    .btn-act-sm {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
     }
 
-    .badge-status-sm.active { background: rgba(16, 185, 129, 0.15); color: var(--primary); }
-    .badge-status-sm.pending { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); }
+    .btn-approve { background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .btn-approve:hover { background: var(--primary); color: white; }
+
+    .btn-reject { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-reject:hover { background: var(--danger); color: white; }
+
+    /* ==========================================================================
+       7. CIRCULAR PERFORMANCE PROGRESS CARDS
+       ========================================================================== */
+    .perf-grid-3col {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .perf-grid-3col { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .perf-card {
+      background: rgba(10, 15, 26, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .circle-chart {
+      width: 60px;
+      height: 60px;
+      margin: 6px auto;
+      position: relative;
+    }
+
+    .circle-chart svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .circle-bg { stroke: rgba(255, 255, 255, 0.08); fill: none; stroke-width: 3.8; }
+    .circle-progress { stroke: var(--primary); fill: none; stroke-width: 3.8; stroke-dasharray: 100; stroke-dashoffset: 25; transition: stroke-dashoffset 0.8s ease; }
+
+    /* Quick Notice Form */
+    .textarea-box {
+      width: 100%;
+      height: 80px;
+      padding: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 12px;
+      outline: none;
+      resize: none;
+      margin-bottom: 10px;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      margin-top: 24px;
+      padding: 16px 0;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--card-border);
+    }
   </style>
 </head>
 <body>
 
+  <!-- Ambient Light Glows -->
   <div class="glow-bg glow-1"></div>
   <div class="glow-bg glow-2"></div>
 
   <!-- Toast Notification System -->
   <div id="toast-container"></div>
 
-  <!-- Loading Animation -->
+  <!-- Fast Loading Animation Overlay -->
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Loading Master Control Panel...</div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted); font-weight:600;">Connecting FinTech Engine...</div>
   </div>
 
-  <!-- SIDEBAR DRAWER OVERLAY -->
-  <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+  <div class="admin-container">
 
-  <!-- COLLAPSIBLE SIDEBAR MENU -->
-  <aside id="sidebar-drawer" class="sidebar-drawer">
-    <div class="sidebar-head">
-      <span class="brand-title-sm">EarnPro Admin</span>
-      <button style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;" onclick="toggleSidebar(false)">&times;</button>
+    <!-- TOP HEADER BAR -->
+    <header class="top-header-bar">
+      <div class="admin-profile-meta">
+        <img class="admin-avatar" src="https://ui-avatars.com/api/?name=Main+Admin&background=10b981&color=fff" alt="Admin">
+        <div>
+          <div class="admin-name-title">
+            Main Admin
+            <span class="online-dot" title="Realtime Sync Active"></span>
+          </div>
+          <span style="font-size:10px; color:var(--primary); font-weight:700;">SYSTEM OPERATIONAL</span>
+        </div>
+      </div>
+
+      <div class="header-right-tools">
+        <span id="live-time-badge" class="time-badge">00:00:00 AM</span>
+      </div>
+    </header>
+
+    <!-- WELCOME HERO CARD -->
+    <div class="welcome-hero-card">
+      <h1 class="hero-greeting">Welcome, Main Admin 👋</h1>
+      <p class="hero-subtitle">EarnPro Smart FinTech Operations Dashboard</p>
+
+      <div class="pending-tasks-pill-grid">
+        <a href="admin_user_approval.html" class="task-pill">
+          <div class="pill-lbl">Pending Users</div>
+          <div id="task-pending-users" class="pill-num">0</div>
+        </a>
+
+        <a href="admin_withdraw.html" class="task-pill">
+          <div class="pill-lbl">Pending Withdraws</div>
+          <div id="task-pending-withdraws" class="pill-num">0</div>
+        </a>
+
+        <a href="admin_sub_admin_approval.html" class="task-pill">
+          <div class="pill-lbl">Sub Admin Apps</div>
+          <div id="task-pending-subadmin" class="pill-num">0</div>
+        </a>
+      </div>
     </div>
 
-    <nav class="sidebar-menu-list">
-      <a href="admin_dashboard.html" class="sidebar-link active">Dashboard</a>
-      <a href="admin_user_approval.html" class="sidebar-link">User Approval</a>
-      <a href="admin_sub_admin_approval.html" class="sidebar-link">Sub Admin Approval</a>
-      <a href="admin_notifications.html" class="sidebar-link">Broadcast Center</a>
-      <a href="leaderboard.html" class="sidebar-link">Leaderboard</a>
-      <a href="home.html" class="sidebar-link">User Front-End Home</a>
-      <a href="profile.html" class="sidebar-link">Admin Profile</a>
-    </nav>
-  </aside>
+    <!-- LARGE PREMIUM QUICK ACTIONS GRID (ALL ADMIN PAGES) -->
+    <section>
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Master Control Shortcuts
+      </div>
 
-  <!-- STICKY HEADER -->
-  <header class="sticky-header">
-    <div style="display:flex; align-items:center; gap:10px;">
-      <button class="menu-toggle-btn" onclick="toggleSidebar(true)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <div class="quick-actions-3col">
+        <!-- 1. User Approval -->
+        <a href="admin_user_approval.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <span class="action-txt">User Approval</span>
+        </a>
+
+        <!-- 2. Withdraw Management -->
+        <a href="admin_withdraw.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          </div>
+          <span class="action-txt">Withdraws</span>
+        </a>
+
+        <!-- 3. Payment Verification -->
+        <a href="admin_payment_verification.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <span class="action-txt">Payment Verify</span>
+        </a>
+
+        <!-- 4. Sub Admin Approval -->
+        <a href="admin_sub_admin_approval.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <span class="action-txt">Sub Admin App</span>
+        </a>
+
+        <!-- 5. Sub Admin Management -->
+        <a href="admin_sub_admin_management.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="action-txt">Manage Sub Admin</span>
+        </a>
+
+        <!-- 6. User Management -->
+        <a href="admin_user_management.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="action-txt">User Control</span>
+        </a>
+
+        <!-- 7. Referral Bonus -->
+        <a href="admin_referral_bonus.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          </div>
+          <span class="action-txt">Referral Bonus</span>
+        </a>
+
+        <!-- 8. Category Control -->
+        <a href="admin_category_control.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <span class="action-txt">Categories</span>
+        </a>
+
+        <!-- 9. Broadcast Notifications -->
+        <a href="admin_notifications.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <span class="action-txt">Broadcast</span>
+        </a>
+
+        <!-- 10. Notice & Content -->
+        <a href="admin_notice_management.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span class="action-txt">Notice Admin</span>
+        </a>
+
+        <!-- 11. Reports & Analytics -->
+        <a href="admin_reports.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <span class="action-txt">Reports</span>
+        </a>
+
+        <!-- 12. Settings -->
+        <a href="admin_settings.html" class="action-square-card">
+          <div class="icon-box-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <span class="action-txt">Settings</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- LIVE USER & FINANCIAL STATS OVERVIEW -->
+    <section>
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financial & System Overview
+      </div>
+
+      <div class="stats-grid-2col">
+        <div class="stat-card">
+          <div class="stat-lbl-sm">Today's Revenue</div>
+          <div id="stat-today-revenue" class="stat-val-lg" style="color:var(--primary);">৳ 0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card">
+            <div class="stat-lbl-sm">Lifetime Revenue</div>
+            <div id="stat-total-revenue" class="stat-val-lg" style="color:var(--primary);">৳ 0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-lbl-sm">Total Active Members</div>
+          <div id="stat-active-members" class="stat-val-lg" style="color:var(--accent-blue);">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-lbl-sm">Total Withdraw Paid</div>
+          <div id="stat-total-withdraw" class="stat-val-lg" style="color:var(--accent-gold);">৳ 0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TODAY'S PERFORMANCE (CIRCULAR PROGRESS CARDS) -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Today's Realtime Activity Metrics
+      </div>
+
+      <div class="perf-grid-3col">
+        <div class="perf-card">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700;">REGISTRATIONS</div>
+          <div id="perf-today-reg" style="font-size:18px; font-weight:800; color:var(--accent-blue); margin-top:4px;">0</div>
+        </div>
+
+        <div class="perf-card">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700;">ACTIVATIONS</div>
+          <div id="perf-today-act" style="font-size:18px; font-weight:800; color:var(--primary); margin-top:4px;">0</div>
+        </div>
+
+        <div class="perf-card">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700;">REFERRAL REWARDS</div>
+          <div id="perf-today-ref" style="font-size:18px; font-weight:800; color:var(--accent-purple); margin-top:4px;">৳ 0</div>
+        </div>
+
+        <div class="perf-card">
+          <div style="font-size:10px; color:var(--text-muted); font-weight:700;">WITHDRAW REQUESTS</div>
+          <div id="perf-today-withdraw" style="font-size:18px; font-weight:800; color:var(--accent-gold); margin-top:4px;">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LATEST PENDING REGISTRATIONS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        Latest Pending User Approvals
+      </div>
+
+      <div id="latest-pending-users-list" class="list-stack">
+        <div style="text-align:center; color:var(--text-muted); padding:16px;">No pending users waiting for activation.</div>
+      </div>
+    </section>
+
+    <!-- LATEST PENDING WITHDRAWALS -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+        Latest Pending Withdraw Requests
+      </div>
+
+      <div id="latest-pending-withdraws-list" class="list-stack">
+        <div style="text-align:center; color:var(--text-muted); padding:16px;">No pending withdrawal requests.</div>
+      </div>
+    </section>
+
+    <!-- QUICK ANNOUNCEMENT BROADCAST TOOL -->
+    <section class="card-block">
+      <div class="section-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Post Quick Notice to Dashboard
+      </div>
+
+      <input type="text" id="quick-notice-title" class="input-box" style="width:100%; padding:8px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; color:white; margin-bottom:8px; font-size:12px;" placeholder="Notice Title...">
+      <textarea id="quick-notice-desc" class="textarea-box" placeholder="Write notice broadcast description..."></textarea>
+      
+      <button class="btn-act-sm btn-approve" style="width:100%; padding:10px; margin-top:4px;" onclick="publishQuickNotice()">
+        Broadcast Notice Immediately
       </button>
-      <span class="brand-title-sm">Master Dashboard</span>
-    </div>
-
-    <span id="live-clock-text" class="live-clock-badge">00:00:00 AM</span>
-  </header>
-
-  <!-- MAIN DASHBOARD BODY -->
-  <main class="dashboard-body">
-
-    <!-- GLOBAL SEARCH BAR -->
-    <div class="card-block" style="padding:10px 14px; margin-bottom:16px;">
-      <input type="text" id="global-search-input" class="search-input" style="width:100%; background:transparent; border:none; color:var(--text-main); font-size:0.85rem; outline:none;" placeholder="Global Search by UID, Name, WhatsApp, Email, Referral..." oninput="handleGlobalSearch()">
-    </div>
-
-    <!-- PENDING ACTIONS SHORTCUT CARDS -->
-    <section>
-      <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Pending Action Queue
-      </div>
-
-      <div class="pending-action-grid">
-        <!-- 1. Pending User Approvals -->
-        <a href="admin_user_approval.html" class="action-link-card">
-          <div class="action-title">User Approvals</div>
-          <div id="cnt-pending-users" class="action-count-badge">0</div>
-        </a>
-
-        <!-- 2. Pending Sub Admin Applications -->
-        <a href="admin_sub_admin_approval.html" class="action-link-card" style="border-color:rgba(139,92,246,0.3); background:linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(18,26,43,0.85) 100%);">
-          <div class="action-title">Sub Admin Apps</div>
-          <div id="cnt-pending-subadmin" class="action-count-badge" style="color:var(--accent-purple);">0</div>
-        </a>
-
-        <!-- 3. Pending Withdrawals -->
-        <a href="balance.html" class="action-link-card" style="border-color:rgba(16,185,129,0.3); background:linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(18,26,43,0.85) 100%);">
-          <div class="action-title">Pending Withdraws</div>
-          <div id="cnt-pending-withdraws" class="action-count-badge" style="color:var(--primary);">0</div>
-        </a>
-
-        <!-- 4. Broadcast Center -->
-        <a href="admin_notifications.html" class="action-link-card" style="border-color:rgba(59,130,246,0.3); background:linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(18,26,43,0.85) 100%);">
-          <div class="action-title">Broadcast Center</div>
-          <div class="action-count-badge" style="color:var(--accent-blue);">OPEN</div>
-        </a>
-      </div>
     </section>
 
-    <!-- QUICK OVERVIEW USER STATS -->
-    <section>
-      <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Users & Sub Admin Overview
-      </div>
-
-      <div class="stats-4col">
-        <div class="stat-card-box">
-          <div class="stat-lbl">Total Users</div>
-          <div id="stat-total-users" class="stat-num">0</div>
-        </div>
-
-        <div class="stat-card-box">
-          <div class="stat-lbl">Active Members</div>
-          <div id="stat-active-users" class="stat-num" style="color:var(--primary);">0</div>
-        </div>
-
-        <div class="stat-card-box">
-          <div class="stat-lbl">Pending Users</div>
-          <div id="stat-pending-users-box" class="stat-num" style="color:var(--accent-gold);">0</div>
-        </div>
-
-        <div class="stat-card-box">
-          <div class="stat-lbl">Total Sub Admins</div>
-          <div id="stat-total-subadmins" class="stat-num" style="color:var(--accent-purple);">0</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- EARNING & REVENUE OVERVIEW -->
+    <!-- TOP HIGHEST EARNING USERS -->
     <section class="card-block">
       <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Revenue & Withdrawal Overview
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Top 5 Platform Leaders
       </div>
 
-      <div class="revenue-grid">
-        <div class="rev-mini-box">
-          <div class="stat-lbl">Today's Revenue</div>
-          <div id="rev-today" class="stat-num" style="color:var(--primary);">৳ 0</div>
-        </div>
-
-        <div class="rev-mini-box">
-          <div class="stat-lbl">Lifetime Revenue</div>
-          <div id="rev-total" class="stat-num" style="color:var(--primary);">৳ 0</div>
-        </div>
-
-        <div class="rev-mini-box">
-          <div class="stat-lbl">Pending Withdraws</div>
-          <div id="withdraw-pending-sum" class="stat-num" style="color:var(--accent-gold);">৳ 0</div>
-        </div>
-
-        <div class="rev-mini-box">
-          <div class="stat-lbl">Approved Withdraws</div>
-          <div id="withdraw-approved-sum" class="stat-num" style="color:var(--accent-blue);">৳ 0</div>
-        </div>
+      <div id="top-users-list" class="list-stack">
+        <!-- Dynamic Top Users -->
       </div>
     </section>
 
-    <!-- INTERACTIVE PERFORMANCE CHART -->
-    <section class="card-block">
-      <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Registration Growth & Analytics
-      </div>
-      <div class="chart-container">
-        <canvas id="growthChart"></canvas>
-      </div>
-    </section>
+    <!-- FOOTER STATUS -->
+    <footer class="app-footer">
+      <div>EarnPro FinTech Admin Edition v3.0 Pro</div>
+      <div style="color:var(--primary); font-weight:700; margin-top:4px;">● Firebase Realtime Engine Connected</div>
+    </footer>
 
-    <!-- SYSTEM STATUS & POLICY INFO -->
-    <section class="card-block">
-      <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        System Status & Platform Rules
-      </div>
+  </div> <!-- /admin-container -->
 
-      <div class="status-list-grid">
-        <div class="status-item">
-          <span style="color:var(--text-muted);">Activation Fee</span>
-          <strong style="color:var(--primary);">520 Taka</strong>
-        </div>
-        <div class="status-item">
-          <span style="color:var(--text-muted);">Referral Reward</span>
-          <strong style="color:var(--accent-gold);">170 Taka</strong>
-        </div>
-        <div class="status-item">
-          <span style="color:var(--text-muted);">Min. Withdraw</span>
-          <strong>100 Taka</strong>
-        </div>
-        <div class="status-item">
-          <span style="color:var(--text-muted);">Withdraw Interval</span>
-          <strong>Every 3 Days</strong>
-        </div>
-      </div>
-    </section>
-
-    <!-- RECENT USER REGISTRATIONS -->
-    <section class="card-block">
-      <div class="section-head">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
-        Recent Registrations
-      </div>
-
-      <div id="recent-users-container" class="recent-user-list">
-        <!-- Dynamic Realtime User Rows -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- JAVASCRIPT REALTIME MASTER ADMIN DASHBOARD LOGIC -->
+  <!-- JAVASCRIPT MASTER ADMIN DASHBOARD ENGINE -->
   <script>
     // ==========================================================================
     // 1. FIREBASE CONFIGURATION & INITIALIZATION
@@ -668,243 +811,295 @@
 
     // Live Clock Update
     setInterval(() => {
-      document.getElementById('live-clock-text').textContent = new Date().toLocaleTimeString();
+      document.getElementById('live-time-badge').textContent = new Date().toLocaleTimeString();
     }, 1000);
-
-    // Sidebar Controls
-    function toggleSidebar(open) {
-      document.getElementById('sidebar-drawer').classList.toggle('open', open);
-      document.getElementById('sidebar-overlay').classList.toggle('active', open);
-    }
 
     // ==========================================================================
     // 2. REALTIME DATABASE LISTENERS
     // ==========================================================================
     database.ref('users').on('value', (snapshot) => {
       allUsersMap = snapshot.val() || {};
-      calculateUserStats();
-      renderRecentUsers();
-      drawGrowthChart();
+      processDashboardMetrics();
+      renderLatestPendingUsers();
+      renderTopEarners();
       hideLoader();
-    });
-
-    database.ref('sub_admin_applications').on('value', (snapshot) => {
-      allSubAdminAppsMap = snapshot.val() || {};
-      calculateSubAdminStats();
+    }, (error) => {
+      showToast("Error loading users: " + error.message, "error");
+      hideLoader();
     });
 
     database.ref('withdraws').on('value', (snapshot) => {
       allWithdrawsMap = snapshot.val() || {};
-      calculateWithdrawStats();
+      processDashboardMetrics();
+      renderLatestPendingWithdraws();
+    });
+
+    database.ref('sub_admin_applications').on('value', (snapshot) => {
+      allSubAdminAppsMap = snapshot.val() || {};
+      processDashboardMetrics();
     });
 
     // ==========================================================================
-    // 3. STATISTICAL ENGINE & CALCULATION
+    // 3. DASHBOARD METRICS CALCULATION ENGINE
     // ==========================================================================
-    function calculateUserStats() {
-      let total = 0, active = 0, pending = 0, subAdmins = 0;
-      let todayRev = 0, totalRev = 0;
+    function processDashboardMetrics() {
+      let pendingUsersCount = 0;
+      let activeUsersCount = 0;
+      let todayRev = 0;
+      let totalRev = 0;
+      let todayReg = 0;
+      let todayAct = 0;
+      let todayRefRewardsSum = 0;
 
       const todayStr = new Date().toDateString();
 
       Object.keys(allUsersMap).forEach(key => {
         const u = allUsersMap[key];
-        total++;
+        u.authUid = key;
 
+        if (u.accountStatus === 'pending') pendingUsersCount++;
         if (u.accountStatus === 'active') {
-          active++;
-          totalRev += 520; // 520 Taka Fee
+          activeUsersCount++;
+          totalRev += 520;
 
           if (u.activationDate && new Date(u.activationDate).toDateString() === todayStr) {
+            todayAct++;
             todayRev += 520;
           }
-        } else if (u.accountStatus === 'pending') {
-          pending++;
+
+          if (u.referredBy) {
+            todayRefRewardsSum += (170 + (u.adminBonusGiven || 0));
+          }
         }
 
-        if (u.isSubAdmin) subAdmins++;
+        if (u.createdAt && new Date(u.createdAt).toDateString() === todayStr) {
+          todayReg++;
+        }
       });
 
-      document.getElementById('stat-total-users').textContent = total;
-      document.getElementById('stat-active-users').textContent = active;
-      document.getElementById('stat-pending-users-box').textContent = pending;
-      document.getElementById('cnt-pending-users').textContent = pending;
-      document.getElementById('stat-total-subadmins').textContent = subAdmins;
-
-      document.getElementById('rev-today').textContent = `৳ ${todayRev}`;
-      document.getElementById('rev-total').textContent = `৳ ${totalRev}`;
-    }
-
-    function calculateSubAdminStats() {
-      let pendingApps = 0;
-      Object.keys(allSubAdminAppsMap).forEach(key => {
-        if (allSubAdminAppsMap[key].status === 'Pending') pendingApps++;
-      });
-      document.getElementById('cnt-pending-subadmin').textContent = pendingApps;
-    }
-
-    function calculateWithdrawStats() {
-      let pendingCount = 0;
-      let pendingSum = 0;
-      let approvedSum = 0;
+      // Process Withdraws
+      let pendingWithdrawCount = 0;
+      let totalApprovedWithdrawSum = 0;
+      let todayWithdrawCount = 0;
 
       Object.keys(allWithdrawsMap).forEach(key => {
         const w = allWithdrawsMap[key];
-        if (w.status === 'Pending') {
-          pendingCount++;
-          pendingSum += (w.amount || 0);
-        } else if (w.status === 'Approved') {
-          approvedSum += (w.amount || 0);
+        if (w.status === 'Pending') pendingWithdrawCount++;
+        if (w.status === 'Approved') totalApprovedWithdrawSum += (w.amount || 0);
+
+        if (w.requestTime && new Date(w.requestTime).toDateString() === todayStr) {
+          todayWithdrawCount++;
         }
       });
 
-      document.getElementById('cnt-pending-withdraws').textContent = pendingCount;
-      document.getElementById('withdraw-pending-sum').textContent = `৳ ${pendingSum.toFixed(2)}`;
-      document.getElementById('withdraw-approved-sum').textContent = `৳ ${approvedSum.toFixed(2)}`;
+      // Process Sub Admin Applications
+      let pendingSubAdminApps = 0;
+      Object.keys(allSubAdminAppsMap).forEach(key => {
+        if (allSubAdminAppsMap[key].status === 'Pending') pendingSubAdminApps++;
+      });
+
+      // Render Pill Badges
+      document.getElementById('task-pending-users').textContent = pendingUsersCount;
+      document.getElementById('task-pending-withdraws').textContent = pendingWithdrawCount;
+      document.getElementById('task-pending-subadmin').textContent = pendingSubAdminApps;
+
+      // Render Financial Summary
+      document.getElementById('stat-today-revenue').textContent = `৳ ${todayRev}`;
+      document.getElementById('stat-total-revenue').textContent = `৳ ${totalRev}`;
+      document.getElementById('stat-active-members').textContent = activeUsersCount;
+      document.getElementById('stat-total-withdraw').textContent = `৳ ${totalApprovedWithdrawSum.toFixed(2)}`;
+
+      // Render Today's Realtime Metrics
+      document.getElementById('perf-today-reg').textContent = todayReg;
+      document.getElementById('perf-today-act').textContent = todayAct;
+      document.getElementById('perf-today-ref').textContent = `৳ ${todayRefRewardsSum}`;
+      document.getElementById('perf-today-withdraw').textContent = todayWithdrawCount;
     }
 
     // ==========================================================================
-    // 4. RECENT USERS RENDERING & SEARCH
+    // 4. RENDERING LATEST PENDING LISTS & DIRECT QUICK APPROVAL
     // ==========================================================================
-    function renderRecentUsers() {
-      const container = document.getElementById('recent-users-container');
+    function renderLatestPendingUsers() {
+      const container = document.getElementById('latest-pending-users-list');
       container.innerHTML = '';
 
-      let userArray = Object.keys(allUsersMap).map(key => ({
-        authUid: key,
-        ...allUsersMap[key]
-      }));
+      const pendingUsers = [];
+      Object.keys(allUsersMap).forEach(key => {
+        const u = allUsersMap[key];
+        if (u.accountStatus === 'pending') {
+          pendingUsers.push({ authUid: key, ...u });
+        }
+      });
 
-      // Sort Newest First
-      userArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      pendingUsers.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-      const recentTen = userArray.slice(0, 10);
-
-      if (recentTen.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No users registered yet.</div>`;
+      if (pendingUsers.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:16px;">No pending users waiting for activation.</div>`;
         return;
       }
 
-      recentTen.forEach(u => {
+      pendingUsers.slice(0, 5).forEach(u => {
         const div = document.createElement('div');
-        div.className = 'recent-user-card';
+        div.className = 'list-item-card';
 
         const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
 
         div.innerHTML = `
-          <div class="user-left">
+          <div class="item-left">
             <img class="user-avatar-sm" src="${avatar}" alt="Avatar">
             <div style="min-width:0;">
               <div style="font-weight:700; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${escapeHTML(u.name || 'User')}
               </div>
-              <div style="font-size:0.7rem; color:var(--text-muted);">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">UID: ${u.uid || '------'} | ${escapeHTML(u.whatsapp || 'No WA')}</div>
             </div>
           </div>
-          <span class="badge-status-sm ${u.accountStatus || 'pending'}">${u.accountStatus || 'pending'}</span>
+          <button class="btn-act-sm btn-approve" onclick="quickActivateUser('${u.authUid}')">
+            Approve
+          </button>
         `;
         container.appendChild(div);
       });
     }
 
-    function handleGlobalSearch() {
-      const term = document.getElementById('global-search-input').value.toLowerCase().trim();
-      const container = document.getElementById('recent-users-container');
+    async function quickActivateUser(authUid) {
+      const u = allUsersMap[authUid];
+      if (!u) return;
 
-      let userArray = Object.keys(allUsersMap).map(key => ({
-        authUid: key,
-        ...allUsersMap[key]
-      }));
+      if (confirm(`Directly activate account for ${u.name}?`)) {
+        const now = Date.now();
+        const updates = {};
 
-      if (term) {
-        userArray = userArray.filter(u => 
-          (u.name && u.name.toLowerCase().includes(term)) ||
-          (u.uid && u.uid.toString().toLowerCase().includes(term)) ||
-          (u.whatsapp && u.whatsapp.toLowerCase().includes(term)) ||
-          (u.email && u.email.toLowerCase().includes(term))
-        );
+        updates[`users/${authUid}/accountStatus`] = 'active';
+        updates[`users/${authUid}/paymentStatus`] = 'Verified';
+        updates[`users/${authUid}/activationDate`] = now;
+        updates[`users/${authUid}/approvedBy`] = 'Main Admin Quick Action';
+
+        // Direct Referral Reward (170 Taka)
+        if (u.referredBy) {
+          const referrerAuthUid = Object.keys(allUsersMap).find(k => {
+            const r = allUsersMap[k];
+            return (r.uid && r.uid.toString() === u.referredBy.toString()) ||
+                   (r.referralCode && r.referralCode.toString() === u.referredBy.toString());
+          });
+
+          if (referrerAuthUid) {
+            const referrer = allUsersMap[referrerAuthUid];
+            updates[`users/${referrerAuthUid}/balance`] = (referrer.balance || 0) + 170;
+            updates[`users/${referrerAuthUid}/totalEarnings`] = (referrer.totalEarnings || 0) + 170;
+            updates[`users/${referrerAuthUid}/activeReferral`] = (referrer.activeReferral || 0) + 1;
+          }
+        }
+
+        try {
+          await database.ref().update(updates);
+          showToast(`Account activated for ${u.name}!`, "success");
+        } catch (err) {
+          showToast("Error activating account: " + err.message, "error");
+        }
       }
+    }
 
+    function renderLatestPendingWithdraws() {
+      const container = document.getElementById('latest-pending-withdraws-list');
       container.innerHTML = '';
-      userArray.slice(0, 10).forEach(u => {
+
+      const pendingWithdraws = [];
+      Object.keys(allWithdrawsMap).forEach(key => {
+        const w = allWithdrawsMap[key];
+        if (w.status === 'Pending') {
+          pendingWithdraws.push({ id: key, ...w });
+        }
+      });
+
+      pendingWithdraws.sort((a, b) => (b.requestTime || 0) - (a.requestTime || 0));
+
+      if (pendingWithdraws.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:16px;">No pending withdrawal requests.</div>`;
+        return;
+      }
+
+      pendingWithdraws.slice(0, 5).forEach(w => {
         const div = document.createElement('div');
-        div.className = 'recent-user-card';
-        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+        div.className = 'list-item-card';
+
         div.innerHTML = `
-          <div class="user-left">
-            <img class="user-avatar-sm" src="${avatar}" alt="Avatar">
-            <div style="min-width:0;">
-              <div style="font-weight:700; color:var(--text-main);">${escapeHTML(u.name || 'User')}</div>
-              <div style="font-size:0.7rem; color:var(--text-muted);">UID: ${u.uid || '------'}</div>
+          <div class="item-left">
+            <div>
+              <div style="font-weight:700; color:var(--text-main);">${escapeHTML(w.userName || 'User')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">${w.method} (${w.accountNumber})</div>
             </div>
           </div>
-          <span class="badge-status-sm ${u.accountStatus || 'pending'}">${u.accountStatus || 'pending'}</span>
+          <div style="text-align:right;">
+            <div style="font-weight:800; color:var(--primary);">৳ ${w.amount}</div>
+            <a href="admin_withdraw.html" style="font-size:10px; color:var(--accent-blue); text-decoration:none; font-weight:700;">Process &rarr;</a>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderTopEarners() {
+      const container = document.getElementById('top-users-list');
+      container.innerHTML = '';
+
+      const userList = Object.keys(allUsersMap).map(k => ({ authUid: k, ...allUsersMap[k] }));
+      userList.sort((a, b) => (b.totalEarnings || b.balance || 0) - (a.totalEarnings || a.balance || 0));
+
+      userList.slice(0, 5).forEach((u, index) => {
+        const div = document.createElement('div');
+        div.className = 'list-item-card';
+
+        const avatar = u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=10b981&color=fff`;
+
+        div.innerHTML = `
+          <div class="item-left">
+            <strong style="color:var(--accent-gold); font-size:12px;">#${index + 1}</strong>
+            <img class="user-avatar-sm" src="${avatar}" alt="Avatar">
+            <div>
+              <div style="font-weight:700;">${escapeHTML(u.name || 'Member')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">UID: ${u.uid || '------'}</div>
+            </div>
+          </div>
+          <div style="font-weight:800; color:var(--primary);">
+            ৳ ${(u.totalEarnings || u.balance || 0).toFixed(2)}
+          </div>
         `;
         container.appendChild(div);
       });
     }
 
     // ==========================================================================
-    // 5. LIGHTWEIGHT CANVAS CHART RENDERING
+    // 5. QUICK NOTICE BROADCAST TOOL
     // ==========================================================================
-    function drawGrowthChart() {
-      const canvas = document.getElementById('growthChart');
-      if (!canvas) return;
+    async function publishQuickNotice() {
+      const title = document.getElementById('quick-notice-title').value.trim();
+      const desc = document.getElementById('quick-notice-desc').value.trim();
 
-      const ctx = canvas.getContext('2d');
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = 180;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw Grid Lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let y = 30; y < canvas.height; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+      if (!title || !desc) {
+        showToast("Notice title and description required.", "error");
+        return;
       }
 
-      // Smooth Curve Data Points
-      const points = [
-        { x: 20, y: 140 },
-        { x: canvas.width * 0.2, y: 120 },
-        { x: canvas.width * 0.4, y: 80 },
-        { x: canvas.width * 0.6, y: 90 },
-        { x: canvas.width * 0.8, y: 40 },
-        { x: canvas.width - 20, y: 30 }
-      ];
+      const noticeId = database.ref('notices').push().key;
+      const now = Date.now();
 
-      // Draw Gradient Under Line
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
-      grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+      const noticeData = {
+        title: title,
+        message: desc,
+        badge: "ANNOUNCEMENT",
+        timestamp: now
+      };
 
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
+      try {
+        await database.ref(`notices/${noticeId}`).set(noticeData);
+        document.getElementById('quick-notice-title').value = '';
+        document.getElementById('quick-notice-desc').value = '';
+        showToast("Quick notice broadcasted to all users!", "success");
+      } catch (err) {
+        showToast("Error publishing notice: " + err.message, "error");
       }
-      ctx.lineTo(points[points.length - 1].x, canvas.height);
-      ctx.lineTo(points[0].x, canvas.height);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Draw Stroke Line
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 3;
-      ctx.stroke();
     }
-
-    window.addEventListener('resize', drawGrowthChart);
 
     // ==========================================================================
     // 6. HELPER FUNCTIONS
