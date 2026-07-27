@@ -69,7 +69,6 @@
     .glow-1 { width: 380px; height: 380px; background: rgba(16, 185, 129, 0.1); top: -80px; left: -80px; }
     .glow-2 { width: 380px; height: 380px; background: rgba(245, 158, 11, 0.08); bottom: -80px; right: -80px; }
 
-    /* Layout Container */
     .admin-container {
       max-width: 1250px;
       margin: 0 auto;
@@ -100,6 +99,7 @@
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
       font-size: 12px;
       font-weight: 600;
@@ -109,13 +109,14 @@
 
     .toast.success { border-left: 4px solid var(--primary); }
     .toast.error { border-left: 4px solid var(--danger); }
+    .toast.warning { border-left: 4px solid var(--accent-gold); }
 
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-20px) scale(0.95); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    /* Header Bar */
+    /* Header Bar & Control Panel */
     .admin-header {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -123,6 +124,8 @@
       border-radius: var(--radius-xl);
       padding: 16px 20px;
       display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
@@ -149,6 +152,40 @@
       padding: 4px 8px;
       border-radius: 6px;
       text-transform: uppercase;
+    }
+
+    /* Sound & Browser Notification Control Toolbar */
+    .sound-control-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 15, 26, 0.6);
+      border: 1px solid var(--card-border);
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .btn-ctrl-sm {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: var(--transition);
+    }
+
+    .btn-ctrl-sm:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .vol-slider {
+      width: 60px;
+      accent-color: var(--primary);
+      cursor: pointer;
     }
 
     /* ==========================================================================
@@ -203,10 +240,7 @@
       gap: 10px;
     }
 
-    .search-row {
-      display: flex;
-      gap: 8px;
-    }
+    .search-row { display: flex; gap: 8px; }
 
     .search-input {
       flex: 1;
@@ -233,11 +267,7 @@
       gap: 6px;
     }
 
-    .filter-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .filter-select {
       flex: 1;
@@ -255,7 +285,7 @@
     .filter-select option { background: #0f172a; color: white; }
 
     /* ==========================================================================
-       4. PENDING USER DATA TABLE
+       4. PENDING USER DATA TABLE & NEW REQUEST HIGHLIGHT
        ========================================================================== */
     .table-card {
       background: var(--card-bg);
@@ -293,13 +323,36 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       vertical-align: middle;
       white-space: nowrap;
+      transition: var(--transition);
     }
 
-    .user-profile-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    /* NEW REQUEST GREEN GLOW HIGHLIGHT (60 SECONDS) */
+    .row-new-highlight {
+      background: rgba(16, 185, 129, 0.12) !important;
+      outline: 1.5px solid var(--primary);
+      box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.25);
+      animation: pulseGreenGlow 2s infinite alternate;
     }
+
+    @keyframes pulseGreenGlow {
+      from { background: rgba(16, 185, 129, 0.08); }
+      to { background: rgba(16, 185, 129, 0.2); }
+    }
+
+    .new-badge-tag {
+      font-size: 9px;
+      font-weight: 800;
+      color: #000;
+      background: var(--primary);
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-left: 6px;
+      display: inline-block;
+      animation: pulse 1s infinite alternate;
+    }
+
+    .user-profile-cell { display: flex; align-items: center; gap: 10px; }
 
     .user-avatar {
       width: 38px;
@@ -327,44 +380,29 @@
     .btn-act {
       padding: 7px 14px;
       border-radius: var(--radius-sm);
-      font-size: 0.75rem;
+      font-size: 0.725rem;
       font-weight: 700;
       border: none;
       cursor: pointer;
       transition: var(--transition);
     }
 
-    .btn-view {
-      background: rgba(59, 130, 246, 0.2);
-      color: var(--accent-blue);
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
+    .btn-view { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.4); }
     .btn-view:hover { background: var(--accent-blue); color: white; }
 
-    /* Direct Clickable Approve Button */
     .btn-approve {
       background: rgba(16, 185, 129, 0.25);
       color: var(--primary);
       border: 1px solid var(--primary);
       box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
     }
-    .btn-approve:hover {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 0 15px var(--primary-glow);
-    }
+    .btn-approve:hover { background: var(--primary); color: white; box-shadow: 0 0 15px var(--primary-glow); }
 
-    .btn-reject {
-      background: rgba(239, 68, 68, 0.2);
-      color: var(--danger);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
+    .btn-reject { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
     .btn-reject:hover { background: var(--danger); color: white; }
 
-    .btn-act:disabled { opacity: 0.5; cursor: not-allowed; }
-
     /* ==========================================================================
-       5. MODAL SYSTEM & BONUS SELECTOR
+       5. MODALS & LOADING OVERLAY
        ========================================================================== */
     .modal-backdrop {
       position: fixed;
@@ -476,13 +514,29 @@
 
   <div class="admin-container">
 
-    <!-- ADMIN HEADER -->
+    <!-- ADMIN HEADER & NOTIFICATION CONTROL BAR -->
     <header class="admin-header">
-      <div class="brand-title">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Main Admin
+      <div>
+        <div class="brand-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Main Admin
+        </div>
+        <span class="brand-badge">User Account Approval</span>
       </div>
-      <span class="brand-badge">User Account Approval</span>
+
+      <!-- Live Sound & Browser Notification Settings -->
+      <div class="sound-control-bar">
+        <button class="btn-ctrl-sm" id="btn-toggle-mute" onclick="toggleMuteSound()" title="Mute/Unmute Notification Sound">
+          <span id="mute-icon">🔊</span>
+        </button>
+        <input type="range" id="vol-slider" class="vol-slider" min="0" max="1" step="0.1" value="0.8" onchange="setVolume(this.value)" title="Volume">
+        <button class="btn-ctrl-sm" onclick="playNotificationChime(true)">
+          Test Sound
+        </button>
+        <button class="btn-ctrl-sm" id="btn-request-notif" onclick="requestBrowserNotificationPermission()">
+          Enable Popups
+        </button>
+      </div>
     </header>
 
     <!-- TOP SUMMARY STATS -->
@@ -649,7 +703,7 @@
       </div>
 
       <div style="margin-bottom:14px;">
-        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Rejection Reason:</label>
+        <label style="display:block; font-size:0.725rem; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Rejection Reason:</label>
         <textarea id="reject-reason-input" class="search-input" style="height:80px; resize:none;" placeholder="Enter reason for rejection..."></textarea>
       </div>
 
@@ -660,7 +714,7 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT REALTIME USER APPROVAL LOGIC -->
+  <!-- JAVASCRIPT REALTIME LOGIC, AUDIO CHIME & NOTIFICATIONS -->
   <script>
     // ==========================================================================
     // 1. FIREBASE CONFIGURATION & INITIALIZATION
@@ -681,12 +735,170 @@
     let allUsersMap = {};
     let selectedUserAuthUid = null;
     let selectedAdminBonus = 0;
+    let isInitialLoad = true;
+    let newlyAddedUserUids = new Set(); // For 60s Green Glow
+
+    // Sound Controls State
+    let soundVolume = 0.8;
+    let isSoundMuted = false;
+
+    // LocalStorage Deduplication System
+    const NOTIFIED_STORAGE_KEY = 'earnpro_admin_notified_pending_uids';
+
+    function getNotifiedPendingIds() {
+      try {
+        return JSON.parse(localStorage.getItem(NOTIFIED_STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function markPendingIdAsNotified(authUid) {
+      const list = getNotifiedPendingIds();
+      if (!list.includes(authUid)) {
+        list.push(authUid);
+        localStorage.setItem(NOTIFIED_STORAGE_KEY, JSON.stringify(list));
+      }
+    }
 
     // ==========================================================================
-    // 2. REALTIME DATABASE LISTENERS
+    // 2. AUDIO SYNTHESIZER & SOUND NOTIFICATION ENGINE
+    // ==========================================================================
+    function playNotificationChime(forceTest = false) {
+      if (isSoundMuted && !forceTest) return;
+
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+
+        // 2-tone FinTech Notification Chime (880Hz -> 1320Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5
+        osc1.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15); // E6
+
+        gain1.gain.setValueAtTime(soundVolume, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.4);
+      } catch (e) {
+        console.warn("Audio Context playback error:", e);
+      }
+    }
+
+    function toggleMuteSound() {
+      isSoundMuted = !isSoundMuted;
+      document.getElementById('mute-icon').textContent = isSoundMuted ? '🔇' : '🔊';
+      showToast(isSoundMuted ? 'Sound muted.' : 'Sound unmuted.', 'warning');
+    }
+
+    function setVolume(val) {
+      soundVolume = parseFloat(val);
+    }
+
+    // ==========================================================================
+    // 3. BROWSER POPUP NOTIFICATION SYSTEM
+    // ==========================================================================
+    function requestBrowserNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            showToast('Browser notifications enabled!', 'success');
+            document.getElementById('btn-request-notif').style.display = 'none';
+          } else {
+            showToast('Notification permission denied.', 'warning');
+          }
+        });
+      }
+    }
+
+    function triggerNativeBrowserNotification(user, pendingCount) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notif = new Notification('New User Registration', {
+          body: `${user.name || 'A new user'} (UID: ${user.uid || 'N/A'}) is waiting for activation. Pending Users: ${pendingCount}`,
+          icon: 'https://ui-avatars.com/api/?name=EP&background=10b981&color=fff',
+          tag: user.authUid
+        });
+
+        notif.onclick = function() {
+          window.focus();
+          // Scroll to user row and open View Modal
+          const targetRow = document.getElementById(`row-user-${user.authUid}`);
+          if (targetRow) {
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          openViewModal(user.authUid);
+          notif.close();
+        };
+      }
+    }
+
+    // Auto-check browser permission status on page load
+    window.addEventListener('load', () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        document.getElementById('btn-request-notif').style.display = 'none';
+      }
+    });
+
+    // ==========================================================================
+    // 4. REALTIME DATABASE LISTENERS & NEW REGISTRATION DETECTOR
     // ==========================================================================
     database.ref('users').on('value', (snapshot) => {
-      allUsersMap = snapshot.val() || {};
+      const data = snapshot.val() || {};
+      const previousUsersMap = { ...allUsersMap };
+      allUsersMap = data;
+
+      const notifiedList = getNotifiedPendingIds();
+      let pendingTotal = 0;
+
+      Object.keys(allUsersMap).forEach(authUid => {
+        const u = allUsersMap[authUid];
+        u.authUid = authUid;
+
+        if (u.accountStatus === 'pending') {
+          pendingTotal++;
+
+          if (isInitialLoad) {
+            // Seed existing pending accounts on initial page render so sound doesn't trigger for old data
+            markPendingIdAsNotified(authUid);
+          } else {
+            // CHECK FOR BRAND NEW REALTIME PENDING REGISTRATIONS
+            if (!notifiedList.includes(authUid) && !previousUsersMap[authUid]) {
+              markPendingIdAsNotified(authUid);
+
+              // 1. Play Sound Chime
+              playNotificationChime();
+
+              // 2. Add to 60s Green Glow set
+              newlyAddedUserUids.add(authUid);
+              setTimeout(() => {
+                newlyAddedUserUids.delete(authUid);
+                filterAndRenderUsers(); // Re-render to remove glow
+              }, 60000);
+
+              // 3. Trigger Native Browser Popup
+              triggerNativeBrowserNotification(u, pendingTotal);
+
+              // 4. Display Actionable Premium Toast
+              showToastWithAction(
+                "New Registration",
+                `${u.name || 'New user'} (UID: ${u.uid || 'N/A'}) is waiting for approval.`,
+                authUid
+              );
+            }
+          }
+        }
+      });
+
+      isInitialLoad = false;
+
       calculateTopSummaryStats();
       filterAndRenderUsers();
       hideLoader();
@@ -696,7 +908,7 @@
     });
 
     // ==========================================================================
-    // 3. TOP SUMMARY STATS CALCULATIONS
+    // 5. TOP SUMMARY STATS CALCULATIONS
     // ==========================================================================
     function calculateTopSummaryStats() {
       let pendingCount = 0;
@@ -741,7 +953,7 @@
     }
 
     // ==========================================================================
-    // 4. INSTANT SEARCH & FILTERS
+    // 6. INSTANT SEARCH & FILTERS
     // ==========================================================================
     function filterAndRenderUsers() {
       const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
@@ -754,7 +966,6 @@
         ...allUsersMap[key]
       }));
 
-      // Search Filter
       if (searchTerm) {
         userArray = userArray.filter(u => 
           (u.uid && u.uid.toString().toLowerCase().includes(searchTerm)) ||
@@ -766,17 +977,14 @@
         );
       }
 
-      // Status Filter
       if (statusFilter !== 'all') {
         userArray = userArray.filter(u => (u.accountStatus || 'pending') === statusFilter);
       }
 
-      // Payment Filter
       if (paymentFilter !== 'all') {
         userArray = userArray.filter(u => (u.paymentStatus || (u.accountStatus === 'active' ? 'Verified' : 'Pending')) === paymentFilter);
       }
 
-      // Time Filter
       if (timeFilter !== 'all') {
         const now = Date.now();
         const oneDay = 24 * 60 * 60 * 1000;
@@ -790,7 +998,6 @@
         });
       }
 
-      // Sort Newest First
       userArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
       renderUserTable(userArray);
@@ -809,6 +1016,13 @@
 
       userArray.forEach(u => {
         const tr = document.createElement('tr');
+        tr.id = `row-user-${u.authUid}`;
+
+        const isNewHighlight = newlyAddedUserUids.has(u.authUid);
+        if (isNewHighlight) {
+          tr.className = 'row-new-highlight';
+        }
+
         const status = u.accountStatus || 'pending';
         const paymentStatus = u.paymentStatus || (status === 'active' ? 'Verified' : 'Pending');
 
@@ -824,7 +1038,10 @@
             <div class="user-profile-cell">
               <img class="user-avatar" src="${avatar}" alt="Avatar">
               <div>
-                <div style="font-weight:700;">${escapeHTML(u.name || 'User')}</div>
+                <div style="font-weight:700;">
+                  ${escapeHTML(u.name || 'User')}
+                  ${isNewHighlight ? '<span class="new-badge-tag">NEW</span>' : ''}
+                </div>
                 <div style="font-size:0.7rem; color:var(--text-muted);">${u.gender || 'N/A'}</div>
               </div>
             </div>
@@ -855,7 +1072,7 @@
     }
 
     // ==========================================================================
-    // 5. VIEW DETAILS MODAL
+    // 7. VIEW DETAILS MODAL
     // ==========================================================================
     function openViewModal(authUid) {
       selectedUserAuthUid = authUid;
@@ -865,7 +1082,6 @@
       const paymentStatus = u.paymentStatus || (u.accountStatus === 'active' ? 'Verified' : 'Pending');
       const content = document.getElementById('view-modal-content');
 
-      // Find Referrer Info
       let referrerName = 'Direct Join';
       let referrerUid = 'None';
       if (u.referredBy) {
@@ -883,7 +1099,7 @@
         <div class="detail-row"><span class="detail-lbl">WhatsApp Number:</span><span class="detail-val">${escapeHTML(u.whatsapp || 'N/A')}</span></div>
         <div class="detail-row"><span class="detail-lbl">Email Address:</span><span class="detail-val">${escapeHTML(u.email || 'N/A')}</span></div>
         <div class="detail-row"><span class="detail-lbl">Registration Date:</span><span class="detail-val">${u.createdAt ? new Date(u.createdAt).toLocaleString() : 'N/A'}</span></div>
-        <div class="detail-row"><span class="detail-lbl">Payment Submitted:</span><span class="detail-val" style="color:var(--primary); font-size:1rem;">৳ 520 Taka</span></div>
+        <div class="detail-row"><span class="detail-lbl">Payment Amount:</span><span class="detail-val" style="color:var(--primary); font-size:1rem;">৳ 520 Taka</span></div>
         <div class="detail-row"><span class="detail-lbl">Transaction ID:</span><span class="detail-val" style="color:var(--accent-blue);">${escapeHTML(u.trxId || 'N/A')}</span></div>
         <div class="detail-row"><span class="detail-lbl">Payment Status:</span><span class="detail-val" style="color:${paymentStatus === 'Verified' ? 'var(--primary)' : 'var(--accent-gold)'};">${paymentStatus}</span></div>
         <div class="detail-row"><span class="detail-lbl">Referred By:</span><span class="detail-val">${escapeHTML(referrerName)} (UID: ${referrerUid})</span></div>
@@ -894,7 +1110,7 @@
     }
 
     // ==========================================================================
-    // 6. APPROVAL WORKFLOW & CASCADING COMMISSIONS ENGINE
+    // 8. APPROVAL WORKFLOW & CASCADING COMMISSIONS ENGINE
     // ==========================================================================
     function openApproveModalDirect(authUid) {
       selectedUserAuthUid = authUid;
@@ -1044,7 +1260,7 @@
     }
 
     // ==========================================================================
-    // 7. REJECT ACCOUNT TRANSACTION
+    // 9. REJECT ACCOUNT TRANSACTION
     // ==========================================================================
     function openRejectModal() {
       document.getElementById('reject-reason-input').value = '';
@@ -1064,7 +1280,6 @@
       updates[`users/${selectedUserAuthUid}/accountStatus`] = 'Rejected';
       updates[`users/${selectedUserAuthUid}/rejectReason`] = reason;
 
-      // Send Notification to User
       const userNotifKey = database.ref(`notifications/${selectedUserAuthUid}`).push().key;
       updates[`notifications/${selectedUserAuthUid}/${userNotifKey}`] = {
         title: "Account Registration Rejected",
@@ -1083,7 +1298,7 @@
     }
 
     // ==========================================================================
-    // 8. CSV EXPORT TOOL
+    // 10. CSV EXPORT & HELPER FUNCTIONS
     // ==========================================================================
     function exportUserListCSV() {
       let csvContent = "data:text/csv;charset=utf-8,Full Name,UID,WhatsApp,Email,Gender,Status,Payment Status,Reg Date\n";
@@ -1102,9 +1317,6 @@
       document.body.removeChild(link);
     }
 
-    // ==========================================================================
-    // 9. HELPER FUNCTIONS
-    // ==========================================================================
     function closeModal(modalId) {
       document.getElementById(modalId).classList.remove('active');
     }
@@ -1118,13 +1330,39 @@
         ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
         : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
 
-      toast.innerHTML = `${iconSvg} <span>${message}</span>`;
+      toast.innerHTML = `<div style="display:flex; align-items:center; gap:8px;">${iconSvg} <span>${message}</span></div>`;
       container.appendChild(toast);
 
       setTimeout(() => {
         toast.style.animation = 'slideDown 0.3s ease reverse forwards';
         setTimeout(() => toast.remove(), 300);
       }, 3500);
+    }
+
+    function showToastWithAction(title, message, targetAuthUid) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast warning`;
+
+      toast.innerHTML = `
+        <div style="min-width:0; padding-right:6px;">
+          <strong style="color:var(--accent-gold); display:block; font-size:11px;">🔔 ${escapeHTML(title)}</strong>
+          <span style="font-size:11px;">${escapeHTML(message)}</span>
+        </div>
+        <div style="display:flex; gap:4px; flex-shrink:0;">
+          <button class="btn-act btn-approve" style="padding:4px 8px; font-size:10px;" onclick="openViewModal('${targetAuthUid}'); this.closest('.toast').remove();">View User</button>
+          <button class="btn-act" style="padding:4px 6px; font-size:10px; background:rgba(255,255,255,0.1); color:white;" onclick="this.closest('.toast').remove();">&times;</button>
+        </div>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.animation = 'slideDown 0.3s ease reverse forwards';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 8000);
     }
 
     function hideLoader() {
